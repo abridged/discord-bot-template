@@ -134,6 +134,56 @@ When a developer asks for help setting up a Discord bot:
    - Explain how the web interface can be extended for bot management
    - **Important**: After completing all steps, provide a summary: "Congratulations! Your Discord bot is now fully set up and running. You can use the Quick Start section in the README for future reference when starting your development environment."
 
+## Restarting Services for Returning Developers
+
+When a developer asks to "Restart my Discord bot services" or similar:
+
+1. **Check Configuration**:
+   - First, verify their .env file is properly configured:
+   ```bash
+   cat .env | grep -v "^#" | grep -v "^$"
+   ```
+   - Check that all required fields have actual values, not placeholder text:
+     - NGROK_AUTHTOKEN should be a valid ngrok auth token
+     - NGROK_DOMAIN should be their registered domain
+     - DISCORD_CLIENT_ID should be their Discord application ID
+     - DISCORD_TOKEN should be their bot token
+   - If any values are missing or appear to be placeholders, guide the developer to add the correct values
+   - **Critical**: Do NOT ask the developer to directly share their tokens or credentials with you
+
+2. **Check for Running Services**:
+   - Before starting new services, check if any are already running:
+   ```bash
+   ps aux | grep -i ngrok | grep -v grep
+   ps aux | grep -i "npm run bot:dev" | grep -v grep
+   ps aux | grep -i "npm run dev" | grep -v grep
+   ```
+   - If services are already running, ask the developer if they want to stop and restart them
+   - If they confirm, help them stop the existing processes:
+   ```bash
+   pkill -f ngrok
+   pkill -f "npm run bot:dev"
+   pkill -f "npm run dev"
+   ```
+
+3. **Start Services in Order**:
+   - Start each service in a separate terminal window in this specific order:
+     1. Start ngrok tunnel: `npm run tunnel`
+     2. Wait for the tunnel to establish and verify the forwarding URL
+     3. Start Discord bot: `npm run bot:dev`
+     4. Wait for the bot to connect successfully
+     5. Start Next.js web interface: `npm run dev`
+   - Provide clear feedback after each service starts
+   - If any service fails to start, troubleshoot the issue before proceeding
+
+4. **Verify All Services**:
+   - After starting all services, help the developer verify everything is working:
+     - Confirm ngrok tunnel is active with: `curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[^"]*'`
+     - Confirm Discord bot is online by checking the bot:dev terminal output
+     - Confirm Next.js web interface is accessible at http://localhost:3000
+   - Provide a summary of all running services and their status
+   - Remind the developer to keep all terminal windows open during development
+
 ## Tech Stack
 - **discord.js v14**: Modern Discord API wrapper
 - **Next.js**: React framework for the web dashboard

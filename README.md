@@ -80,6 +80,31 @@ Ask your IDE agent to:
    - The agent will help you run `npm run bot:dev` and `npm run dev` in separate terminals
    - Explain how to verify the bot is online
 
+## For Returning Developers
+
+If you've already set up the project and are returning to development:
+
+1. **Ask your IDE agent to restart services**:
+   Simply tell your IDE agent "Restart my Discord bot services" and they'll:
+   - Check if your .env file is properly configured
+   - Verify if any services are already running
+   - Start or restart the ngrok tunnel, Discord bot, and Next.js server
+   - Verify all services are running correctly
+
+2. **Manual restart (if needed)**:
+   If you prefer to restart services manually:
+   ```bash
+   # Kill any existing processes
+   pkill -f ngrok
+   pkill -f "npm run bot:dev"
+   pkill -f "npm run dev"
+   
+   # Start services in separate terminals
+   npm run tunnel    # Terminal 1
+   npm run bot:dev   # Terminal 2
+   npm run dev       # Terminal 3
+   ```
+
 ## Quick Start
 
 Once you've completed the setup process above, use these commands to quickly start development in the future:
