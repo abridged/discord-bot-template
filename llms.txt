@@ -1,0 +1,263 @@
+# Discord Bot Template
+
+## Project Overview
+This template provides a foundation for building Discord bots with modern web capabilities. It combines discord.js for bot functionality, Next.js for web interface, and ngrok for secure local development tunneling. The architecture is designed to be extended by IDE agents for custom Discord bot development and eventual Collab.Land Account Kit integration.
+
+## Detailed Setup Guide for IDE Agent-Assisted Development
+
+### 1. Local Environment Configuration
+
+1. **Environment Variables Setup**:
+   - When the developer asks to "Set up my environment variables":
+   - Guide them to copy the `.env.example` file to `.env` with a command like `cp .env.example .env`
+   - Explain that this file will store their Discord credentials securely
+   - Explain each environment variable in detail:
+     ```
+     DISCORD_TOKEN=       # The bot token from Discord Developer Portal
+     DISCORD_CLIENT_ID=   # The application client ID from Discord Developer Portal
+     NEXT_PUBLIC_API_URL= # The URL for the Next.js API (default: http://localhost:3000)
+     NGROK_AUTHTOKEN=     # Their ngrok authentication token
+     NGROK_DOMAIN=        # Their ngrok domain or random subdomain
+     ```
+   - Emphasize that they'll be filling in these values as they proceed with setup
+   - **Important**: After completing this step, explicitly direct them to the next step in the README.md: "Now that your environment file is set up, let's move to the next step: 'Setting Up ngrok'. Would you like me to help you set up ngrok for your Discord bot?"
+
+### 2. ngrok Setup and Configuration
+
+1. **ngrok Account Setup and Domain Configuration**:
+   - When the developer asks to "Help me set up ngrok for my Discord bot":
+   - Guide them to sign up for an ngrok account at https://ngrok.com/
+   - Explain the free tier vs. paid plans (note: Pay-as-you-go plans require domain registration)
+   - Help them navigate to the Auth section to find their authtoken
+   
+   - **CRITICAL: You MUST direct the developer to add their ngrok authtoken to the .env file themselves**
+   - Say something like: "Please go to https://dashboard.ngrok.com/get-started/your-authtoken to get your authtoken, then add it to the NGROK_AUTHTOKEN field in your .env file"
+   - Remind them that they need to replace 'your_ngrok_auth_token' with their actual token
+   - Ask them to confirm when they've added their authtoken to the .env file
+   - Do NOT ask them to share their authtoken with you
+   
+   - For paid plans: Guide them to set up a reserved domain in the ngrok dashboard (https://dashboard.ngrok.com/domains)
+   
+   - **CRITICAL: You MUST direct the developer to add their ngrok domain to the .env file themselves**
+   - Say something like: "After registering a domain at https://dashboard.ngrok.com/domains, please add it to the NGROK_DOMAIN field in your .env file"
+   - Remind them that they need to replace 'your_ngrok_domain' with their actual registered domain
+   - Ask them to confirm when they've added their domain to the .env file
+   - Do NOT ask them to share their domain with you
+   
+   - Explain that the tunnel command in package.json uses Node.js to read the domain from the .env file
+   - Guide them to start the tunnel with `npm run tunnel`
+   - Show them the output confirming their tunnel is active (should show their domain forwarding to localhost:3000)
+   - Emphasize that they should keep this tunnel running for the next steps
+   - **Important**: After completing this step, guide them to the next step: "Great! You've set up ngrok and have your domain configured. Now let's set up your Discord bot."
+
+### 3. Discord Application and Bot Setup
+
+When a developer asks for help setting up a Discord bot:
+
+1. **Creating a Discord Application**:
+   - When the developer asks to "Create a new Discord application in the Discord Developer Portal":
+   - Guide them to visit the Discord Developer Portal (https://discord.com/developers/applications)
+   - Help them click "New Application" and enter an appropriate name for their bot
+   - Explain that after creation, they'll be on the "General Information" page
+   - Show them where to find their Application ID (Client ID) on this page
+   - Guide them to add this Client ID to their `.env` file immediately
+   - Guide them to navigate to the "Bot" tab in the left sidebar
+   - Explain that their bot is already created with the application name
+   - Show them how to click "Reset Token" under the username to generate and view the bot token
+   - Emphasize they should copy this token and immediately add it to their `.env` file as it won't be viewable again
+   - Explain the importance of keeping this token secure and never sharing it publicly
+   - Guide them to scroll down to "Privileged Gateway Intents" and enable all three options:
+     - Message Content Intent (for reading message content)
+     - Server Members Intent (for member-related events)
+     - Presence Intent (for presence updates)
+   - Remind them to click "Save Changes" at the bottom of the page
+   - **Important**: After completing this step, guide them to the next part: "Great! You've created your Discord application and configured the bot. Now let's set up the bot permissions and generate an invite link to add it to your server."
+
+2. **Configuring Bot Permissions**:
+   - When the developer asks to "Set up bot permissions and generate an invite link":
+   - Explain how to navigate to the OAuth2 section in the Discord Developer Portal
+   - Guide them to find the URL generator area within the OAuth2 section
+   - Guide them to select the appropriate scopes (bot, applications.commands)
+   - Explain each scope's purpose (bot for adding the bot, applications.commands for slash commands)
+   - Help them select the necessary bot permissions based on their use case, including:
+     - Under "Text Permissions":
+       - `Send Messages` (to send messages)
+       - `Read Message History` (to read messages)
+     - Any other permissions their specific bot will need based on functionality
+   - Generate an invite URL and explain how to invite the bot to their server
+   - The bot will now be added to their server
+   - **Important**: After completing this step, guide them to the next step: "Perfect! Your bot is now set up and added to your server. Let's continue with installing the project dependencies as mentioned in the README."
+
+2. **Dependency Installation**:
+   - When the developer asks to "Install project dependencies":
+   - Explain the purpose of each major dependency in package.json
+   - Guide them to run `npm install`
+   - Explain potential troubleshooting steps for common installation issues
+   - **Important**: After completing this step, guide them to the next step: "Great! All the dependencies are now installed. Let's move on to setting up ngrok for your Discord bot as mentioned in the README."
+
+
+
+### 4. Running and Testing the Discord Bot
+
+1. **Starting the ngrok Tunnel**:
+   - When the developer asks to "Start my ngrok tunnel":
+   - Emphasize that the tunnel must be active before deploying commands or starting the bot
+   - Guide them to start ngrok with `npm run tunnel`
+   - Explain how to read the ngrok interface to find their public URL
+   - Explain that on the free tier, they'll get a random subdomain (e.g., https://abc123.ngrok.io) each time they restart ngrok
+   - Inform them that for consistent development, they might want to consider a paid plan for reserved domains
+   - Show them how to use this URL for Discord webhooks or interactions
+   - Explain that the tunnel must remain active during development
+   - **Important**: After completing this step, guide them to the next step: "Perfect! Your ngrok tunnel is now active. Let's deploy your Discord bot commands next."
+
+2. **Deploying Slash Commands**:
+   - When the developer asks to "Deploy my Discord bot commands":
+   - Explain the purpose of the deploy-commands.js script
+   - Guide them to run `node src/bot/deploy-commands.js`
+   - Explain what happens during command registration
+   - Troubleshoot common command deployment issues
+   - **Important**: After completing this step, guide them to the next step: "Great! Your bot commands have been deployed. Now let's start your Discord bot."
+
+3. **Starting the Bot**:
+   - When the developer asks to "Start my Discord bot and web server":
+   - Explain the difference between development mode (`npm run bot:dev`) and production mode (`npm run bot:start`)
+   - Guide them to start the bot with `npm run bot:dev` in a new terminal window
+   - Explain how to interpret console output to verify the bot is running
+   - Show them how to check if the bot is online in their Discord server
+   - **Important**: After starting the bot, guide them to start the web interface: "Great! Your bot is now running. Let's also start the Next.js web interface."
+
+4. **Starting the Web Interface**:
+   - In the same conversation about starting the bot:
+   - Explain the purpose of the Next.js web interface
+   - Guide them to start it with `npm run dev` in another terminal window
+   - Show how to access it at http://localhost:3000
+   - Explain how the web interface can be extended for bot management
+   - **Important**: After completing all steps, provide a summary: "Congratulations! Your Discord bot is now fully set up and running. You can use the Quick Start section in the README for future reference when starting your development environment."
+
+## Tech Stack
+- **discord.js v14**: Modern Discord API wrapper
+- **Next.js**: React framework for the web dashboard
+- **ngrok**: Secure tunneling for local development
+- **Node.js**: JavaScript runtime
+- **dotenv**: Environment variable management
+
+## Project Structure
+```
+discord-bot-template/
+├── .env.example           # Environment variable template
+├── next.config.js         # Next.js configuration
+├── package.json           # Project dependencies and scripts
+├── src/
+│   ├── bot/               # Discord bot code
+│   │   ├── commands/      # Bot slash commands
+│   │   ├── events/        # Bot event handlers
+│   │   ├── deploy-commands.js # Command deployment script
+│   │   └── index.js       # Bot entry point
+│   ├── pages/             # Next.js pages
+│   │   ├── api/           # API routes
+│   │   ├── _app.js        # Next.js app wrapper
+│   │   └── index.js       # Home page
+│   └── styles/            # CSS styles
+└── README.md              # Simple readme for humans
+```
+
+## Development Workflow
+1. Set up environment variables in `.env` file
+2. Deploy slash commands using `node src/bot/deploy-commands.js`
+3. Create a secure tunnel with `npm run tunnel`
+4. Start the bot in development mode with `npm run bot:dev`
+5. Start the Next.js server with `npm run dev`
+
+## Bot Features
+- Command handler system for easy extension
+- Event-based architecture
+- Slash command support
+- Guild-specific command deployment
+
+## Web Dashboard
+The Next.js application provides a web interface that can be extended to:
+- Display bot statistics
+- Manage bot settings
+- Provide authentication flows
+- Integrate with Collab.Land Account Kit
+
+## Extending the Bot
+### Adding New Commands
+1. Create a new file in `src/bot/commands/`
+2. Export an object with `data` (SlashCommandBuilder) and `execute` (function)
+3. Re-deploy commands with `node src/bot/deploy-commands.js`
+
+Example:
+```javascript
+const { SlashCommandBuilder } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('example')
+    .setDescription('Example command')
+    .addStringOption(option => 
+      option.setName('input')
+        .setDescription('Example input')
+        .setRequired(true)),
+  async execute(interaction) {
+    const input = interaction.options.getString('input');
+    await interaction.reply(`You said: ${input}`);
+  },
+};
+```
+
+### Adding New Events
+1. Create a new file in `src/bot/events/`
+2. Export an object with `name` (event name), `once` (boolean), and `execute` (function)
+
+Example:
+```javascript
+const { Events } = require('discord.js');
+
+module.exports = {
+  name: Events.MessageCreate,
+  once: false,
+  async execute(message) {
+    if (message.author.bot) return;
+    console.log(`Message received: ${message.content}`);
+  },
+};
+```
+
+## Collab.Land Account Kit Integration
+To integrate with Collab.Land Account Kit:
+1. Set up authentication endpoints in Next.js API routes
+2. Implement OAuth2 flow for Discord
+3. Connect to Collab.Land APIs
+4. Store user tokens securely
+5. Implement token-gating features in your bot commands
+
+## Deployment
+For production deployment:
+1. Set up a VPS or cloud service (AWS, GCP, Azure, etc.)
+2. Configure environment variables
+3. Use PM2 or similar for process management
+4. Set up a reverse proxy with Nginx or similar
+5. Configure SSL certificates
+
+## Best Practices
+- Keep bot token and sensitive data in environment variables
+- Use descriptive names for commands and events
+- Implement proper error handling
+- Add logging for debugging
+- Follow Discord's rate limits and terms of service
+- Implement permission checks for commands
+- Use Discord's Intents system appropriately
+
+## Troubleshooting
+- **Bot not responding**: Check if token is correct and intents are properly set
+- **Commands not showing**: Ensure deploy-commands.js was run successfully
+- **Next.js errors**: Check for syntax errors in pages or components
+- **ngrok not working**: Verify your authentication token and subscription
+
+## Resources
+- [Discord.js Documentation](https://discord.js.org/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [ngrok Documentation](https://ngrok.com/docs)
+- [Collab.Land Documentation](https://collab.land/docs)
+- [Discord Developer Portal](https://discord.com/developers/docs)
