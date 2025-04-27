@@ -126,6 +126,20 @@ When a developer asks for help setting up a Discord bot:
    - Show them how to check if the bot is online in their Discord server
    - **Important**: After starting the bot, guide them to start the web interface: "Great! Your bot is now running. Let's also start the Next.js web interface."
 
+4. **Testing Deployed Commands**:
+   - After all services are running, guide the developer to test their bot commands
+   - Direct them to go to their Discord server where the bot is added
+   - Instruct them to type `/ping` in any text channel where the bot has access
+   - Explain that the bot should respond with "Pong!"
+   - Emphasize that this confirms their bot is properly set up and responding to commands
+   - Show them how this is a good baseline test before adding more complex commands
+   - If the command doesn't work, help them troubleshoot common issues such as:
+     - Bot may not have proper permissions in the channel
+     - Commands may not have been properly deployed
+     - Bot might be offline or disconnected
+     - Discord API might be experiencing issues
+   - **Important**: After successfully testing the command, congratulate them and suggest next steps: "Great! Your bot is responding to commands. Now you can start developing your own custom commands as described in the README."
+
 4. **Starting the Web Interface**:
    - In the same conversation about starting the bot:
    - Explain the purpose of the Next.js web interface
@@ -183,6 +197,8 @@ When a developer asks to "Restart my Discord bot services" or similar:
      - Confirm Next.js web interface is accessible at http://localhost:3000
    - Provide a summary of all running services and their status
    - Remind the developer to keep all terminal windows open during development
+   - Direct them to test their bot by typing `/ping` in their Discord server to verify command functionality
+   - Explain that successful command response confirms the complete system is working properly
 
 ## Tech Stack
 - **discord.js v14**: Modern Discord API wrapper

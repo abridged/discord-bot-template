@@ -80,6 +80,12 @@ Ask your IDE agent to:
    - The agent will help you run `npm run bot:dev` and `npm run dev` in separate terminals
    - Explain how to verify the bot is online
 
+4. "Test my deployed commands"
+   - Once your bot is online, go to your Discord server where the bot is added
+   - Type `/ping` in any text channel where the bot has access
+   - The bot should respond with "Pong!"
+   - This confirms your bot is properly set up and responding to commands
+
 ## For Returning Developers
 
 If you've already set up the project and are returning to development:
@@ -90,6 +96,7 @@ If you've already set up the project and are returning to development:
    - Verify if any services are already running
    - Start or restart the ngrok tunnel, Discord bot, and Next.js server
    - Verify all services are running correctly
+   - After services are restarted, test your bot by typing `/ping` in your Discord server
 
 2. **Manual restart (if needed)**:
    If you prefer to restart services manually:
