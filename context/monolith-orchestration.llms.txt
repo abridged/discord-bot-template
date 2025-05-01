@@ -1,0 +1,659 @@
+# Discord Quiz Bot: Monolithic-First, Agent-Ready Architecture
+# Purpose: Defines a monolithic application designed for future decomposition into a multi-agent system
+# Version: 1.0.0
+# Date: 2025-04-30
+# Repository: https://github.com/[organization]/discord-bot-template
+# References:
+#   - A2A Protocol: https://google.github.io/A2A
+#   - Model Context Protocol: https://github.com/mcp-foundation/mcp
+#   - Discord.js: https://discord.js.org
+#   - Base Blockchain: https://base.org
+
+## SYSTEM OVERVIEW
+
+The system is initially implemented as a monolithic application with clear module boundaries that will later become agent boundaries. Each module is designed with interfaces that mirror future A2A endpoints and MCP function calls, creating a clear migration path to a distributed multi-agent architecture.
+
+### Agent Future Architecture
+
+1. Orchestrator Agent (OA): Workflow management, task lifecycle, agent discovery
+2. Quiz Agent (QA): Content extraction, quiz generation, contract template creation
+3. Discord Formatting Agent (DFA): Discord UI generation, message handling
+4. Solidity Auditor Agent (SAA): Contract validation, security auditing
+5. Account Kit Agent (AKA): Token validation, wallet integration
+6. Community Context Agent (CCA): Community intelligence, conversation analysis, trend detection
+
+### Repository Structure
+
+```
+/src
+  /core          # Core orchestrator functionality
+  /quiz          # Quiz generation (future Quiz Agent)
+  /discord       # Discord integration (future Discord Agent)
+  /contracts     # Smart contract handling (future Solidity Agent)
+  /accounts      # Token & account handling (future Account Kit Agent)
+  /context       # Community context (future Community Context Agent)
+  /interfaces    # Shared interfaces for all modules
+  /utils         # Common utilities
+```
+
+## MODULE SPECIFICATIONS
+
+### Core Module (Future Orchestrator Agent)
+
+Implementation: TypeScript
+Key Files:
+- `/src/core/orchestrator.ts` - Main workflow manager
+- `/src/core/taskManager.ts` - Task state and lifecycle
+- `/src/core/storage.ts` - Redis-based persistence
+
+Key Interfaces:
+```typescript
+interface Task {
+  id: string;
+  state: 'created' | 'working' | 'completed' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+  messages: Message[];
+  metadata: Record<string, any>;
+}
+
+interface TaskManager {
+  createTask(initialData: any): Promise<Task>;
+  getTask(id: string): Promise<Task | null>;
+  updateTaskState(id: string, state: Task['state']): Promise<void>;
+  addMessage(id: string, message: Message): Promise<void>;
+}
+```
+
+Future A2A Endpoints:
+- POST `/tasks/send` - Create new task
+- GET `/tasks/get/{taskId}` - Get task status
+- POST `/tasks/sendMessage/{taskId}` - Add message to task
+
+Future MCP Broker Interface:
+```typescript
+interface MCPBroker {
+  registerServer(agentId: string, capabilities: string[]): Promise<void>;
+  requestConnection(clientId: string, serverId: string, capabilities: string[]): Promise<ConnectionDetails>;
+  validateToken(token: string): Promise<boolean>;
+}
+```
+
+### Quiz Module (Future Quiz Agent)
+
+Implementation: TypeScript
+Key Files:
+- `/src/quiz/generator.ts` - Quiz generation logic
+- `/src/quiz/extractor.ts` - URL content extraction
+- `/src/quiz/contracts.ts` - Contract template generation
+
+Key Interfaces:
+```typescript
+interface QuizGenerator {
+  generateQuiz(url: string, prompt: string): Promise<Quiz>;
+  createContractTemplate(quiz: Quiz, tokenDetails: TokenDetails): Promise<string>;
+}
+
+interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  questions: Question[];
+  metadata: QuizMetadata;
+}
+
+interface Question {
+  id: string;
+  text: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+```
+
+Future A2A Endpoints:
+- POST `/generate` - Generate quiz from URL
+- POST `/contractTemplate` - Create contract template
+- GET `/status/{quizId}` - Get quiz status
+
+Future MCP Functions:
+```typescript
+interface QuizMCPFunctions {
+  generateQuiz(url: string, prompt: string): Promise<Quiz>;
+  validateQuiz(quiz: Quiz): Promise<ValidationResult>;
+  generateContractTemplate(quizId: string, tokenDetails: TokenDetails): Promise<string>;
+}
+```
+
+### Discord Module (Future Discord Formatting Agent)
+
+Implementation: TypeScript
+Key Files:
+- `/src/discord/commands.ts` - Command handling
+- `/src/discord/formatter.ts` - Message formatting
+- `/src/discord/interactions.ts` - Button interactions
+
+Key Interfaces:
+```typescript
+interface DiscordFormatter {
+  formatQuizPreview(quiz: Quiz): Promise<DiscordMessage>;
+  formatQuizPublic(quiz: Quiz): Promise<DiscordMessage>;
+  createApprovalButtons(): Promise<DiscordComponents>;
+}
+
+interface DiscordMessage {
+  embeds: any[];
+  components?: any[];
+  ephemeral: boolean;
+}
+```
+
+Future A2A Endpoints:
+- POST `/format/preview` - Format quiz preview
+- POST `/format/public` - Format public quiz
+- POST `/components/approval` - Get approval UI components
+
+Future MCP Functions:
+```typescript
+interface DiscordMCPFunctions {
+  formatQuizPreview(quiz: Quiz): Promise<DiscordMessage>;
+  formatQuizPublic(quiz: Quiz): Promise<DiscordMessage>;
+  createComponents(type: string, data: any): Promise<DiscordComponents>;
+}
+```
+
+### Contracts Module (Future Solidity Auditor Agent)
+
+Implementation: TypeScript, Solidity
+Key Files:
+- `/src/contracts/templates.ts` - Contract template management
+- `/src/contracts/validator.ts` - Validation logic
+- `/src/contracts/solidity/*.sol` - Contract templates
+
+Key Interfaces:
+```typescript
+interface ContractManager {
+  generateTemplate(quiz: Quiz, tokenDetails: TokenDetails): Promise<string>;
+  validateContract(contractCode: string): Promise<ValidationResult>;
+  deployContract(contractCode: string, params: DeployParams): Promise<DeployResult>;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  issues: Issue[];
+  suggestions: Suggestion[];
+}
+```
+
+Future A2A Endpoints:
+- POST `/validate` - Validate contract code
+- POST `/audit` - Perform security audit
+- POST `/deploy` - Deploy contract
+
+Future MCP Functions:
+```typescript
+interface SolidityMCPFunctions {
+  validateContract(contractCode: string): Promise<ValidationResult>;
+  auditContract(contractCode: string, requirements: AuditRequirements): Promise<AuditResult>;
+  suggestFixes(contractCode: string, issues: Issue[]): Promise<string>;
+}
+```
+
+### Accounts Module (Future Account Kit Agent)
+
+Implementation: TypeScript
+Key Files:
+- `/src/accounts/tokens.ts` - Token validation and management
+- `/src/accounts/wallets.ts` - Wallet integration
+- `/src/accounts/balances.ts` - Balance checking
+
+Key Interfaces:
+```typescript
+interface AccountManager {
+  validateToken(tokenAddress: string, chainId: number): Promise<TokenValidationResult>;
+  checkBalance(userAddress: string, tokenAddress: string): Promise<BalanceResult>;
+  getDefaultTokenDetails(): Promise<TokenDetails>;
+}
+
+interface TokenDetails {
+  address: string;
+  chainId: number;
+  decimals: number;
+  symbol: string;
+  name: string;
+}
+```
+
+Future A2A Endpoints:
+- POST `/tokens/validate` - Validate token
+- GET `/tokens/default` - Get default token details
+- GET `/balances/{userAddress}/{tokenAddress}` - Check balance
+
+Future MCP Functions:
+```typescript
+interface AccountMCPFunctions {
+  validateToken(tokenAddress: string, chainId: number): Promise<TokenValidationResult>;
+  checkUserBalance(userAddress: string, tokenAddress: string, chainId: number): Promise<BalanceResult>;
+  getWalletForUser(userId: string, chainId: number): Promise<WalletDetails>;
+}
+```
+
+### Context Module (Future Community Context Agent)
+
+Implementation: TypeScript
+Key Files:
+- `/src/context/listener.ts` - Discord message event handling
+- `/src/context/analytics.ts` - Community analysis and insights
+- `/src/context/storage.ts` - Conversation and activity storage
+
+Key Interfaces:
+```typescript
+interface CommunityContextManager {
+  // Core data tracking
+  trackMessage(message: DiscordMessage): Promise<void>;
+  trackInteraction(interaction: DiscordInteraction): Promise<void>;
+  trackCommand(command: CommandUsage): Promise<void>;
+  
+  // Activity metrics
+  getChannelActivity(channelId: string, timeframe: TimeRange): Promise<ChannelActivity>;
+  getUserActivity(userId: string, timeframe: TimeRange): Promise<UserActivity>;
+  getServerActivity(timeframe: TimeRange): Promise<ServerActivity>;
+  
+  // Contextual queries
+  getContext(query: ContextQuery): Promise<ContextResult>;
+  getRelevantConversations(topic: string, timeframe: TimeRange): Promise<ConversationResult>;
+  getUserPreferences(userId: string): Promise<UserPreferences>;
+  
+  // Recommendations
+  getSuggestedTopics(count: number, domain?: string): Promise<string[]>;
+  getPersonalizedRecommendations(userId: string, type: RecommendationType): Promise<Recommendation[]>;
+  getCommunityTrends(timeframe: TimeRange): Promise<TrendResult>;
+}
+
+interface ContextQuery {
+  channels?: string[];
+  timeframe?: TimeRange;
+  topics?: string[];
+  users?: string[];
+}
+```
+
+Future A2A Endpoints:
+- POST `/track/message` - Track a Discord message
+- POST `/track/interaction` - Track a Discord interaction
+- POST `/track/command` - Track a command usage
+- GET `/activity/channel/{channelId}` - Get channel activity data
+- GET `/activity/user/{userId}` - Get user activity data
+- GET `/activity/server` - Get server-wide activity data
+- POST `/context/query` - Get generic contextual data 
+- GET `/context/conversations` - Get relevant conversations
+- GET `/context/preferences/{userId}` - Get user preferences
+- GET `/recommendations/topics` - Get suggested topics
+- GET `/recommendations/user/{userId}` - Get personalized recommendations
+- GET `/trends` - Get community trend analysis
+
+Future MCP Functions:
+```typescript
+interface CommunityContextMCPFunctions {
+  // Core contextual data
+  getRelevantContext(topics: string[], timeframe?: TimeRange): Promise<ContextResult>;
+  getUserContext(userId: string): Promise<UserContextResult>;
+  getChannelContext(channelId: string): Promise<ChannelContextResult>;
+  
+  // Analysis functions
+  analyzeSentiment(text: string): Promise<SentimentResult>;
+  analyzeTopic(text: string): Promise<TopicAnalysisResult>;
+  analyzeUserBehavior(userId: string): Promise<UserBehaviorResult>;
+  
+  // Activity and recommendations
+  getActiveUsers(timeframe: TimeRange): Promise<UserActivity[]>;
+  getSuggestedTopics(count: number, domain?: string): Promise<string[]>;
+  getPersonalizedSuggestions(userId: string, type: string): Promise<Suggestion[]>;
+  getTrendingTopics(timeframe: TimeRange): Promise<TrendingTopic[]>;
+}
+```
+
+## COMMUNICATION PATTERNS
+
+### Current (Monolithic): Function Call Pattern
+
+Internal module communication currently uses direct function calls with interfaces that mirror future API calls:
+
+```typescript
+// Example workflow within monolith
+async function handleAskCommand(url: string, prompt: string) {
+  // Direct function call to Quiz module
+  const quiz = await quizGenerator.generateQuiz(url, prompt);
+  
+  // Direct function call to Discord module
+  const previewMessage = await discordFormatter.formatQuizPreview(quiz);
+  
+  // Direct function call to Contract module
+  const contractTemplate = await contractManager.generateTemplate(quiz, defaultTokenDetails);
+  
+  // Direct function call to Account module
+  const tokenValidation = await accountManager.validateToken(defaultTokenAddress, defaultChainId);
+  
+  // Return formatted response
+  return previewMessage;
+}
+```
+
+### Future (Multi-Agent): A2A Pattern
+
+```typescript
+// Future A2A communication pattern
+async function handleAskCommand(url: string, prompt: string) {
+  // Create task through A2A
+  const task = await orchestrator.createTask({
+    type: 'quiz_generation',
+    input: { url, prompt }
+  });
+  
+  // Send A2A request to Quiz Agent
+  await orchestrator.sendRequest('quiz-agent', {
+    taskId: task.id,
+    action: 'generateQuiz',
+    params: { url, prompt }
+  });
+  
+  // Handle A2A response
+  const quizResponse = await orchestrator.waitForResponse(task.id);
+  const quiz = quizResponse.data.quiz;
+  
+  // Similar pattern for other agent interactions
+  // ...
+}
+```
+
+### Future (Multi-Agent): MCP Pattern
+
+```typescript
+// Future direct MCP calls between agents
+// Example: Quiz Agent calling Solidity Auditor directly
+async function validateQuizContract(contractCode) {
+  // Get connection details from orchestrator
+  const connectionDetails = await mcp.getConnectionDetails('solidity-auditor');
+  
+  // Direct MCP call to Solidity Auditor
+  const validationResult = await mcp.callServer(
+    connectionDetails,
+    'validateContract',
+    { contractCode }
+  );
+  
+  return validationResult;
+}
+```
+
+## TRANSITION STRATEGY
+
+### Phase 1: Module Interface Alignment
+
+1. Ensure all module interfaces match future API designs
+2. Add detailed logging at all module boundaries
+3. Create configuration for future endpoints
+4. Add feature flags for gradual transition
+
+### Phase 2: Extract First Agent (Quiz Agent)
+
+1. Move Quiz module to separate service
+2. Implement A2A endpoints on Orchestrator
+3. Add A2A client to Quiz Agent
+4. Update Orchestrator to call Quiz Agent via A2A
+5. Test compatibility and performance
+
+### Phase 3: Add MCP Broker to Orchestrator
+
+1. Implement MCP connection broker
+2. Add authentication for MCP connections
+3. Create MCP client libraries
+4. Test MCP connections without functional changes
+
+### Phase 4: Extract Remaining Agents
+
+1. Extract Solidity Auditor Agent
+2. Establish direct MCP between Quiz and Solidity agents
+3. Extract Discord Formatting Agent
+4. Extract Account Kit Agent
+5. Test complete distributed system
+
+## WORKFLOWS
+
+### Quiz Creation Workflow (Monolithic)
+
+1. User invokes `/ask` command with URL and prompt
+2. Core module creates task and manages state
+3. Quiz module extracts content and generates questions
+4. Contract module creates template contract
+5. Discord module formats preview message
+6. User approves/rejects via interaction
+7. On approval, contract is deployed
+8. Quiz is published to channel
+
+### Quiz Creation Workflow (Future Multi-Agent)
+
+1. User invokes `/ask` command with URL and prompt
+2. Orchestrator Agent creates task
+3. Orchestrator Agent sends request to Quiz Agent
+4. Quiz Agent generates questions
+5. Quiz Agent calls Solidity Auditor directly via MCP
+6. Orchestrator Agent requests formatting from Discord Agent
+7. Orchestrator Agent requests token validation from Account Kit Agent
+8. User approves/rejects via interaction
+9. Orchestrator Agent coordinates deployment and publishing
+
+## DATA STRUCTURES
+
+### Task Object
+
+```typescript
+interface Task {
+  id: string;
+  state: 'created' | 'working' | 'completed' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+  messages: Message[];
+  metadata: {
+    userId: string;
+    guildId: string;
+    channelId: string;
+    url: string;
+    prompt: string;
+    quizId?: string;
+    contractAddress?: string;
+    [key: string]: any;
+  };
+}
+```
+
+### Quiz Object
+
+```typescript
+interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  sourceUrl: string;
+  createdAt: Date;
+  expiresAt: Date;
+  questions: Question[];
+  tokenDetails: TokenDetails;
+  contractAddress?: string;
+  deploymentStatus: 'pending' | 'deployed' | 'failed';
+  metadata: {
+    creatorId: string;
+    guildId: string;
+    channelId: string;
+    [key: string]: any;
+  };
+}
+```
+
+### Contract Template
+
+```typescript
+interface ContractTemplate {
+  id: string;
+  name: string;
+  description: string;
+  code: string;
+  parameters: {
+    tokenAddress: string;
+    quizId: string;
+    expiryTimestamp: number;
+    rewardAmount: string;
+    [key: string]: any;
+  };
+  validationResult?: ValidationResult;
+}
+```
+
+## PROTOCOLS
+
+### A2A Implementation Details
+
+- Version: 0.6.0 (Latest as of April 2025)
+- Authentication: OAuth2
+- Agent Card: JSON at `/.well-known/agent.json`
+- Endpoints:
+  - `/tasks/send`
+  - `/tasks/get/{taskId}`
+  - `/tasks/sendMessage/{taskId}`
+  - `/tasks/subscribe/{taskId}`
+
+### MCP Implementation Details
+
+- Version: 1.1.0
+- Authentication: Token-based
+- Connection Broker: Implemented in Orchestrator
+- Registration Pattern: 
+  - Agents register capabilities with Orchestrator
+  - Orchestrator provides temporary auth tokens
+  - Direct connections established with tokens
+
+## DEPLOYMENT CONSIDERATIONS
+
+### Monolithic Deployment
+
+- Node.js application (v20+)
+- Redis for state storage
+- Single container deployment
+- Environment variables for configuration
+
+### Future Multi-Agent Deployment
+
+- Separate containers for each agent
+- Service discovery via DNS or orchestrator
+- Shared Redis for task storage
+- Individual scaling policies per agent
+- API Gateway for external access
+
+## SECURITY CONSIDERATIONS
+
+### Current (Monolithic)
+
+- Discord OAuth2 for user authentication
+- Environment variables for sensitive configuration
+- Rate limiting on Discord commands
+- Token validation before operations
+
+### Future (Multi-Agent)
+
+- OAuth2 for A2A endpoints
+- Temporary tokens for MCP connections
+- TLS for all agent communication
+- Comprehensive audit logging
+- Role-based access control for agent operations
+
+## EXAMPLES
+
+### Example: Quiz Generation Internal Call (Current)
+
+```typescript
+// Internal function call
+const quiz = await quizGenerator.generateQuiz(
+  "https://example.com/article", 
+  "Create a quiz about climate science"
+);
+
+// Preview formatting
+const preview = await discordFormatter.formatQuizPreview(quiz);
+
+// Send to Discord
+return preview;
+```
+
+### Example: Quiz Generation A2A Call (Future)
+
+```typescript
+// A2A request
+const task = await orchestrator.createTask({
+  type: "quiz_generation",
+  metadata: { userId, guildId, channelId }
+});
+
+await orchestrator.sendRequest("quiz-agent", {
+  taskId: task.id,
+  action: "generateQuiz",
+  params: {
+    url: "https://example.com/article",
+    prompt: "Create a quiz about climate science"
+  }
+});
+
+// Listen for completion
+const response = await orchestrator.waitForResponse(task.id);
+return response.data;
+```
+
+### Example: Contract Validation MCP Call (Future)
+
+```typescript
+// Direct MCP call from Quiz Agent to Solidity Auditor
+const validationResult = await mcp.callServer(
+  "solidity-auditor",
+  "validateContract",
+  { 
+    contractCode: generatedTemplate,
+    requirements: {
+      checkReentrancy: true,
+      securityLevel: "high"
+    }
+  }
+);
+
+if (!validationResult.valid) {
+  // Handle validation issues
+}
+```
+
+## INTEROPERABILITY
+
+### External System Integration
+
+- Discord API (discord.js v14)
+- Base Blockchain (RPC endpoint)
+- ERC-20 Token Standards
+- Account Kit SDK
+
+### Future Extensions
+
+- Integration with other LLM providers
+- Webhook support for external notifications
+- Export/import of quizzes via JSON
+- Public API for third-party integrations
+
+## AGENT DISCOVERY
+
+### Current (Monolithic)
+
+- Internal module registry
+- Configuration-based capability discovery
+- Feature flags for enabling/disabling modules
+
+### Future (Multi-Agent)
+
+- Agent cards at `/.well-known/agent.json`
+- Orchestrator-managed agent registry
+- Dynamic capability discovery
+- Health checks and status monitoring

@@ -2,6 +2,19 @@
 
 A modern Discord bot template using discord.js, Next.js, and ngrok for local development. Built for IDE agent-centric development with Collab.Land Account Kit integration support.
 
+## Project Structure
+
+- `/context` - Contains project documentation and context files
+  - `*.llms.txt` - IDE agent context files following the llms.txt specification
+  - Design documents and implementation notes
+- `/llms.txt` - Root configuration for IDE agents (conforming to https://llmstxt.org/)
+- `/src` - Source code for the Discord bot and web interface
+
+The project uses IDE agent-aware context management:
+- Agents read from `/context/*.llms.txt` files to understand the project
+- Development summaries are automatically created as dated files
+- Smart agents track implementation progress using this context
+
 ## Step-by-Step Setup with IDE Agent Assistance
 
 ### 1. Configuring Your Local Environment

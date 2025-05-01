@@ -1,0 +1,355 @@
+# llms.txt format: https://llmstxt.org
+# Last updated: 2025-04-30
+
+name: Quiz System Orchestration
+description: Hybrid A2A-MCP orchestration system for Discord quiz bot with blockchain rewards
+version: 1.0.0
+contact: discord-bot-team@example.com
+references:
+  - name: A2A Protocol
+    url: https://github.com/google/A2A
+    description: Google's Agent-to-Agent Protocol for agent interoperability
+  - name: Model Context Protocol (MCP)
+    url: https://modelcontextprotocol.io
+    description: Protocol for function calling between AI models and tools
+  - name: Discord.js
+    url: https://discord.js.org
+    description: JavaScript library for interacting with Discord API
+  - name: Base (Chain ID 8453)
+    url: https://base.org
+    description: Default blockchain for quiz rewards
+  - name: Design Document
+    path: /scratch/2025-04-30-quiz-command-phased-design.md
+    description: Human-readable design specifications
+repo:
+  structure:
+    - path: /src/bot/commands/ask.js
+      description: Discord slash command handler for quiz creation
+    - path: /src/services/orchestrator/
+      description: Orchestrator Agent implementation
+    - path: /src/services/quiz-agent/
+      description: Quiz content generation and contract implementation
+    - path: /src/services/discord-formatting/
+      description: Discord-specific formatting services
+    - path: /src/services/solidity-auditor/
+      description: Smart contract validation services
+    - path: /src/services/account-kit/
+      description: User account and reward management
+
+sections:
+  - name: agents
+    description: Definitions of agent participants in the multi-agent system
+
+agents:
+  - name: orchestrator-agent
+    description: Central coordinator that manages workflows and communication between agents
+    role: Workflow management, task lifecycle, agent discovery
+    implementation:
+      language: TypeScript
+      frameworks:
+        - Express.js for HTTP endpoints
+        - TypeScript MCP SDK (github.com/modelcontextprotocol/typescript-sdk)
+        - Redis for task state management
+      key_files:
+        - /src/services/orchestrator/index.ts (entry point)
+        - /src/services/orchestrator/a2a-server.ts (A2A endpoints)
+        - /src/services/orchestrator/mcp-broker.ts (MCP connection broker)
+        - /src/services/orchestrator/task-manager.ts (task lifecycle)
+    schema: https://github.com/google/A2A/blob/main/schemas/a2a.json
+    capabilities:
+      - a2a_server: Implements A2A protocol endpoints
+      - a2a_client: Communicates with other agents via A2A
+      - mcp_broker: Facilitates direct MCP connections between agents
+      - task_manager: Maintains task state and workflow progression
+      - authentication: Manages security and access control
+    endpoints:
+      - /tasks/send
+      - /tasks/sendSubscribe
+      - /tasks/get
+      - /tasks/cancel
+      - /tasks/pushNotification/set
+      - /mcp/connection/authorize
+
+  - name: quiz-agent
+    description: Creates quizzes from URL content and implements smart contracts
+    role: Content extraction, quiz generation, contract implementation
+    implementation:
+      language: TypeScript
+      frameworks:
+        - Cheerio for HTML parsing
+        - OpenAI SDK for content processing
+        - Solidity for smart contract generation
+        - TypeScript MCP SDK for direct function calls
+      key_files:
+        - /src/services/quiz-agent/index.ts (entry point)
+        - /src/services/quiz-agent/content-extractor.ts (URL content extraction)
+        - /src/services/quiz-agent/quiz-generator.ts (question generation)
+        - /src/services/quiz-agent/contract-generator.ts (Solidity code generation)
+        - /src/services/quiz-agent/mcp-server.ts (MCP function handlers)
+    dependencies:
+      - OpenAI API access for quiz generation
+      - Ethers.js for contract interactions
+    capabilities:
+      - a2a_client: Communicates with Orchestrator via A2A
+      - mcp_server: Exposes functions for direct calls
+      - mcp_client: Makes direct calls to other agents
+      - content_extraction: Extracts content from various URL types
+      - quiz_generation: Creates quiz questions and options
+      - contract_creation: Implements quiz escrow smart contracts
+    endpoints:
+      - /tasks/send
+      - /tasks/get
+      - /mcp/generate_questions
+      - /mcp/create_contract
+
+  - name: discord-formatting-agent
+    description: Handles Discord-specific formatting and user interfaces
+    role: UI generation, message formatting, interaction design
+    implementation:
+      language: TypeScript
+      frameworks:
+        - Discord.js v14.14.1
+        - Express.js for HTTP endpoints
+        - TypeScript MCP SDK for function handling
+      key_files:
+        - /src/services/discord-formatting/index.ts (entry point)
+        - /src/services/discord-formatting/embed-builder.ts (Discord embed creation)
+        - /src/services/discord-formatting/component-factory.ts (Discord UI components)
+        - /src/services/discord-formatting/interaction-handler.ts (Button/select handling)
+    dependencies:
+      - Discord Bot Token (stored in environment variables)
+      - Discord Application ID for interactions
+    capabilities:
+      - a2a_client: Communicates with Orchestrator via A2A
+      - mcp_server: Exposes formatting functions
+      - embed_creation: Creates Discord embeds and UI components
+      - interaction_handler: Processes Discord interactions
+    endpoints:
+      - /tasks/send
+      - /mcp/format_quiz_preview
+      - /mcp/create_interaction_components
+
+  - name: solidity-auditor-agent
+    description: Validates smart contracts for security and correctness
+    role: Security auditing, gas optimization, vulnerability detection
+    implementation:
+      language: TypeScript/Solidity
+      frameworks:
+        - Hardhat for Solidity analysis
+        - Slither for static analysis
+        - TypeScript MCP SDK for function handling
+      key_files:
+        - /src/services/solidity-auditor/index.ts (entry point)
+        - /src/services/solidity-auditor/static-analyzer.ts (code analysis)
+        - /src/services/solidity-auditor/security-checks.ts (vulnerability scanning)
+        - /src/services/solidity-auditor/gas-optimizer.ts (optimization suggestions)
+    dependencies:
+      - Solidity compiler
+      - Python environment for Slither
+    capabilities:
+      - a2a_client: Communicates with Orchestrator via A2A
+      - mcp_server: Exposes auditing functions
+      - static_analysis: Performs static code analysis
+      - security_checks: Detects common vulnerabilities
+      - gas_optimization: Suggests gas optimizations
+    endpoints:
+      - /tasks/send
+      - /tasks/get
+      - /mcp/audit_contract
+      - /mcp/estimate_gas
+
+  - name: account-kit-agent
+    description: Manages user smart accounts and reward distribution
+    role: Wallet management, transaction processing, reward distribution
+    implementation:
+      language: TypeScript
+      frameworks:
+        - Ethers.js for blockchain interactions
+        - Collab.Land Account Kit SDK
+        - TypeScript MCP SDK for function handling
+      key_files:
+        - /src/services/account-kit/index.ts (entry point)
+        - /src/services/account-kit/wallet-manager.ts (smart account creation)
+        - /src/services/account-kit/transaction-processor.ts (blockchain transactions)
+        - /src/services/account-kit/reward-distributor.ts (token distribution)
+    dependencies:
+      - Collab.Land Account Kit credentials
+      - Base RPC provider endpoint
+      - Gas management strategy for transactions
+    capabilities:
+      - a2a_client: Communicates with Orchestrator via A2A
+      - mcp_server: Exposes account functions
+      - wallet_management: Creates and manages user wallets
+      - transaction_processing: Handles blockchain transactions
+      - reward_distribution: Distributes quiz rewards
+    endpoints:
+      - /tasks/send
+      - /mcp/create_wallet
+      - /mcp/process_transaction
+      - /mcp/distribute_rewards
+
+workflows:
+  - name: quiz-creation-workflow
+    description: Creates a quiz from a URL with associated smart contract
+    implementation:
+      entry_point: /src/services/orchestrator/workflows/quiz-creation.ts
+      state_management: Redis task state with transaction-like semantics
+      error_handling: Automatic retry with exponential backoff
+      timeout: 10 minutes for complete workflow
+    triggers:
+      - Discord slash command: /ask
+    prerequisites:
+      - User must have sufficient token balance
+      - URL must be accessible and contain extractable content
+      - Token contract must support ERC-20 standard
+    steps:
+      - name: initiate-task
+        agent: orchestrator-agent
+        action: Create A2A task for quiz creation
+        inputs:
+          - Discord command parameters (URL, prompt, token, etc.)
+        outputs:
+          - A2A task with unique ID
+
+      - name: extract-content
+        agent: quiz-agent
+        action: Extract content from URL
+        protocol: A2A (via Orchestrator)
+        inputs:
+          - URL from Discord command
+        outputs:
+          - Extracted content
+          - Content metadata
+
+      - name: generate-quiz
+        agent: quiz-agent
+        action: Generate quiz questions and options
+        protocol: A2A (via Orchestrator)
+        inputs:
+          - Extracted content
+          - User prompt
+        outputs:
+          - Quiz questions and options
+          - Correct answer metadata
+
+      - name: solidity-code-generation
+        agent: quiz-agent
+        action: Generate smart contract code
+        protocol: A2A (via Orchestrator)
+        inputs:
+          - Quiz metadata
+          - Token parameters
+        outputs:
+          - Contract source code
+
+      - name: contract-audit
+        agent: quiz-agent
+        action: Request contract audit
+        protocol: MCP (direct call)
+        target: solidity-auditor-agent
+        function: audit_contract
+        inputs:
+          - Contract source code
+          - Security requirements
+        outputs:
+          - Audit results
+          - Security recommendations
+
+      - name: contract-refinement
+        agent: quiz-agent
+        action: Refine contract based on audit feedback
+        protocol: Internal processing
+        inputs:
+          - Contract source code
+          - Audit results
+        outputs:
+          - Refined contract code
+
+      - name: quiz-preview-generation
+        agent: orchestrator-agent
+        action: Request quiz preview formatting
+        protocol: A2A
+        target: discord-formatting-agent
+        inputs:
+          - Quiz questions and answers
+          - Token information
+        outputs:
+          - Formatted Discord preview
+
+      - name: present-preview
+        agent: orchestrator-agent
+        action: Send quiz preview to user
+        protocol: Discord API
+        inputs:
+          - Formatted Discord preview
+        outputs:
+          - User interaction with preview
+
+      - name: handle-approval
+        agent: orchestrator-agent
+        action: Process user approval
+        protocol: Discord API
+        inputs:
+          - User interaction response
+        outputs:
+          - Approval decision
+
+      - name: deploy-contract
+        agent: orchestrator-agent
+        action: Request contract deployment
+        protocol: A2A
+        target: account-kit-agent
+        inputs:
+          - Refined contract code
+          - User approval
+        outputs:
+          - Deployment transaction hash
+          - Contract address
+
+      - name: publish-quiz
+        agent: orchestrator-agent
+        action: Publish quiz to Discord channel
+        protocol: Discord API
+        inputs:
+          - Quiz questions and options
+          - Contract address
+          - Expiry information
+        outputs:
+          - Published quiz post
+          - Quiz participation instructions
+
+  - name: quiz-participation-workflow
+    description: Handles user participation in active quizzes
+    steps: [...]
+
+  - name: quiz-resolution-workflow
+    description: Resolves quiz and distributes rewards after expiry
+    steps: [...]
+
+protocols:
+  - name: a2a
+    specification: https://github.com/google/A2A
+    version: 0.5.0
+    implementation: HTTP REST API with JSON payloads
+    authentication: OAuth 2.0
+    endpoints:
+      - /tasks/send
+      - /tasks/sendSubscribe
+      - /tasks/get
+      - /tasks/cancel
+      - /tasks/pushNotification/set
+
+  - name: mcp
+    specification: https://modelcontextprotocol.io
+    version: 1.0.0
+    implementation: TypeScript SDK
+    authentication: JWT tokens
+    connection_broker: orchestrator-agent
+
+requirements:
+  - Orchestrator must maintain task state across all interactions
+  - MCP connections must be authorized by the Orchestrator
+  - All MCP interactions must be logged in A2A task history
+  - Agents must handle connection failures gracefully
+  - Authentication tokens must be short-lived and scoped
+  - Task IDs must be preserved across protocol boundaries
