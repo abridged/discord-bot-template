@@ -5,7 +5,8 @@
  * which is responsible for initialization tasks when the bot starts up.
  */
 
-const { handleReady } = require('../../../bot/events/ready');
+const readyEvent = require('../../../bot/events/ready');
+const handleReady = readyEvent.execute;
 
 // Set global timeout to prevent hanging tests
 jest.setTimeout(5000);
@@ -61,7 +62,7 @@ describe('Ready Event Handler', () => {
   describe('Basic Functionality', () => {
     test('should log bot login information', () => {
       // Call the handler
-      handleReady(mockClient);
+      readyEvent.execute(mockClient);
       
       // Should log login information
       expect(logMessages.some(msg => msg.includes('QuizBot#1234'))).toBe(true);
@@ -70,7 +71,7 @@ describe('Ready Event Handler', () => {
     
     test('should set bot activity status', () => {
       // Call the handler
-      handleReady(mockClient);
+      readyEvent.execute(mockClient);
       
       // Should set user activity
       expect(mockClient.user.setActivity).toHaveBeenCalledWith(expect.any(String), {
@@ -81,7 +82,7 @@ describe('Ready Event Handler', () => {
     test('should initialize quiz expiry mechanism', async () => {
       // Call the handler - use Promise.race with timeout to prevent hanging
       await Promise.race([
-        Promise.resolve(handleReady(mockClient)),
+        Promise.resolve(readyEvent.execute(mockClient)),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Test timeout')), 1000))
       ]).catch(err => {
         if (err.message !== 'Test timeout') throw err;
@@ -97,17 +98,26 @@ describe('Ready Event Handler', () => {
   // Error Handling
   //--------------------------------------------------------------
   describe('Error Handling', () => {
-    test('should handle errors during status setting', () => {
+    test('should handle errors during status setting', async () => {
       // Make setActivity throw an error
       mockClient.user.setActivity.mockImplementationOnce(() => {
-        throw new Error('Failed to set activity');
+        throw new Error('Failed to set activity status');
       });
       
-      // Call the handler - should not throw
-      expect(() => handleReady(mockClient)).not.toThrow();
+      // Spy on console.error to capture errors
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation((...args) => {
+        logMessages.push(args.join(' '));
+      });
       
-      // Should log error
-      expect(logMessages.some(msg => msg.includes('Failed to set activity'))).toBe(true);
+      try {
+        // Call the handler - should not throw
+        await readyEvent.execute(mockClient);
+        
+        // Should log error with the right message
+        expect(logMessages.some(msg => msg.includes('Failed to set activity status'))).toBe(true);
+      } finally {
+        errorSpy.mockRestore();
+      }
     });
     
     test('should handle errors during quiz expiry initialization', async () => {
@@ -120,7 +130,7 @@ describe('Ready Event Handler', () => {
       try {
         // Call the handler with timeout to prevent hanging
         await Promise.race([
-          handleReady(mockClient),
+          readyEvent.execute(mockClient),
           new Promise(resolve => setTimeout(resolve, 1000))
         ]);
         
@@ -142,7 +152,7 @@ describe('Ready Event Handler', () => {
       mockClient.quizzes.set('quiz2', { id: 'quiz2' });
       
       // Call the handler
-      handleReady(mockClient);
+      readyEvent.execute(mockClient);
       
       // Should clear quizzes
       expect(mockClient.quizzes.size).toBe(0);
@@ -158,7 +168,7 @@ describe('Ready Event Handler', () => {
       try {
         // Call the handler with timeout protection
         await Promise.race([
-          handleReady(mockClient),
+          readyEvent.execute(mockClient),
           new Promise(resolve => setTimeout(resolve, 1000))
         ]);
         
@@ -190,7 +200,7 @@ describe('Ready Event Handler', () => {
       try {
         // Call the handler with timeout protection
         await Promise.race([
-          handleReady(mockClient),
+          readyEvent.execute(mockClient),
           new Promise(resolve => setTimeout(resolve, 1000))
         ]);
         
@@ -209,7 +219,7 @@ describe('Ready Event Handler', () => {
       
       // Call the handler with timeout protection
       await Promise.race([
-        handleReady(mockClient),
+        readyEvent.execute(mockClient),
         new Promise(resolve => setTimeout(resolve, 1000))
       ]);
       

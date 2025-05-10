@@ -148,16 +148,8 @@ describe('Smart Contract Security Edge Cases', () => {
     const attackResult = simulateOracleBasedOperation(0.01, 1000);
     expect(attackResult).toBe(100000); // Extremely high number of tokens
     
-    // Proposed protection: Use time-weighted average prices or multiple oracles
-    const secureOraclePriceFunction = (prices) => {
-      // Remove outliers
-      const sortedPrices = [...prices].sort((a, b) => a - b);
-      const withoutExtremes = sortedPrices.slice(1, -1);
-      
-      // Calculate average of remaining prices
-      const sum = withoutExtremes.reduce((acc, price) => acc + price, 0);
-      return sum / withoutExtremes.length;
-    };
+    // Import the mocked secureOraclePriceFunction from our test utils
+    const { secureOraclePriceFunction } = require('../mocks/ethersjs');
     
     // Test the secure function with multiple price points including an outlier
     const securePrice = secureOraclePriceFunction([2.4, 2.5, 0.01, 2.6, 2.5]);

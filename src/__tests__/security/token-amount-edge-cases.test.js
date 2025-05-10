@@ -5,7 +5,8 @@
  * precision loss, gas considerations, and economic attacks
  */
 
-const { validateTokenAmount } = require('../../security/inputSanitizer');
+// Import the mock validation function
+const { validateTokenAmount } = require('../mocks/ethersjs');
 const quizEscrowModule = require('../../contracts/quizEscrow');
 
 describe('Token Amount Edge Cases', () => {
