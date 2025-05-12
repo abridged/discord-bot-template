@@ -337,12 +337,14 @@ async function sendError(interaction, errorMessage) {
   }
 }
 
-module.exports = {
-  askCommand,
-  handleAskCommand,
-  sendEphemeralPreview,
-  handleQuizApproval,
-  handleQuizCancellation,
-  publishQuiz,
-  sendError
-};
+// Export the command as the default export for discord.js command handling
+module.exports = askCommand;
+
+// Also export the helper functions for testing and other modules
+module.exports.askCommand = askCommand;
+module.exports.handleAskCommand = handleAskCommand;
+module.exports.sendEphemeralPreview = sendEphemeralPreview;
+module.exports.handleQuizApproval = handleQuizApproval;
+module.exports.handleQuizCancellation = handleQuizCancellation;
+module.exports.publishQuiz = publishQuiz;
+module.exports.sendError = sendError;
