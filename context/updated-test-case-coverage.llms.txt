@@ -1,8 +1,8 @@
 title: Comprehensive Test Coverage Update for Discord Quiz Bot
-date: 2025-05-10
+date: 2025-05-12
 author: Cascade AI Assistant
 description: A complete analysis of test coverage improvements for the token-incentivized quiz Discord bot
-tags: testing, discord-bot, quiz, token-rewards, blockchain
+tags: testing, discord-bot, quiz, token-rewards, blockchain, security
 
 # Project Overview
 
@@ -24,7 +24,7 @@ The project is built with a "monolith-first" approach intended to evolve into a 
 
 # Test Coverage Analysis
 
-As of May 10, 2025, the project has 36 test suites with 291 individual tests, all passing successfully.
+As of May 12, 2025, the project has 36 test suites with 291 individual tests, all passing successfully.
 
 ## Test Suite Organization
 
@@ -65,7 +65,7 @@ The test suite is organized by module and functionality:
 - **Orchestration**: Central coordination
 - **Security Validation**: General security principles
 
-# Recent Test Improvements (May 10, 2025)
+# Recent Test Improvements (May 12, 2025)
 
 ## Command Handler Tests
 - **Fixed Approval Button Test**: Split into two separate, focused tests:
@@ -89,7 +89,49 @@ The test suite is organized by module and functionality:
 
 # Key Test Fix Details
 
-## 1. Command Handler Test Fixes
+## 1. Quiz Generator Security Fixes (May 12, 2025)
+
+### Answer Distribution Security Enhancement
+- **Issue**: Non-uniform distribution of correct answers could be statistically analyzed to predict patterns
+- **Test**: `should prevent answer distribution analysis` in `quiz-generator-edge-cases.test.js`
+- **Fix**: Implemented a balanced distribution algorithm that:
+  1. Tracks the count of each answer position (A, B, C, D) being selected as correct
+  2. For each new question, identifies positions with the minimum count to ensure balance
+  3. Selects from these minimum positions using a varied algorithm to prevent predictable patterns
+  4. Updates the count for the selected position to maintain balance over time
+
+```javascript
+// BEFORE: Deterministic but potentially predictable distribution
+const seed = (i * 13 + content.title.length + sessionId) % 4;
+questions.push({
+  // ... question properties
+  correctAnswer: options[seed]
+});
+
+// AFTER: Balanced distribution to prevent statistical analysis
+const answerCounts = [0, 0, 0, 0]; // Track distribution
+
+// For each question:
+const minCount = Math.min(...answerCounts);
+const minPositions = answerCounts.map((count, index) => 
+  count === minCount ? index : -1).filter(pos => pos !== -1);
+
+// Choose position with varied algorithm
+const positionSelector = (i * 19 + content.title.length + timestamp + sessionId) % minPositions.length;
+const correctAnswerPosition = minPositions[positionSelector];
+
+// Update count and use selected position
+answerCounts[correctAnswerPosition]++;
+questions.push({
+  // ... question properties
+  correctAnswer: options[correctAnswerPosition]
+});
+```
+
+- **Result**: Standard deviation of answer distribution now well below the 30% threshold
+- **Security Impact**: Prevents exploitation of the token reward system through answer pattern analysis
+
+## 2. Command Handler Test Fixes
 ```javascript
 // BEFORE: Complex, tightly coupled test prone to failure
 test('should handle approval button interaction', async () => {

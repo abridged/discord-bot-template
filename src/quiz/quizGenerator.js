@@ -115,14 +115,14 @@ async function generateQuestionsFromContent(content, count) {
     (word, title) => `How do professionals use ${word} in the field of ${title}?`
   ];
   
+  // Track correct answer distribution to ensure uniformity
+  const answerCounts = [0, 0, 0, 0]; // Count of each position (A, B, C, D) being correct
+  
   // Question generation loop - try to create unique questions for this quiz
   for (let i = 0; i < count; i++) {
     // Pick a different seed word for each question
     const wordIndex = (i * sessionId) % shuffledWords.length;
     const seedWord = shuffledWords[wordIndex] || 'concept';
-    
-    // Deterministic but different correct answer for each question
-    const seed = (i * 13 + content.title.length + sessionId) % 4;
     
     // Create a unique question that varies with each call
     let questionPattern;
@@ -154,10 +154,23 @@ async function generateQuestionsFromContent(content, count) {
       `Option D related to ${seedWord} (${i}_${sessionId})`
     ];
     
+    // Find the position with the lowest count to ensure uniform distribution
+    // If multiple positions have the same count, choose one based on a predictable but varied algorithm
+    const minCount = Math.min(...answerCounts);
+    const minPositions = answerCounts.map((count, index) => count === minCount ? index : -1).filter(pos => pos !== -1);
+    
+    // Choose from the minimum count positions using a varied algorithm 
+    // This ensures different sets of questions don't follow the same pattern
+    const positionSelector = (i * 19 + content.title.length + timestamp + sessionId) % minPositions.length;
+    const correctAnswerPosition = minPositions[positionSelector];
+    
+    // Update the count for this position
+    answerCounts[correctAnswerPosition]++;
+    
     questions.push({
       question: questionPattern.split('_')[0], // Remove the uniqueness markers for the actual question
       options,
-      correctAnswer: options[seed]
+      correctAnswer: options[correctAnswerPosition]
     });
   }
   
