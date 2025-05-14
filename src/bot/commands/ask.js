@@ -7,6 +7,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { processQuizCommand } = require('../../orchestration');
+const { sanitizeUrl, validateTokenAmount, validateEthereumAddress } = require('../../security/inputSanitizer');
 
 /**
  * /ask command definition
@@ -65,9 +66,36 @@ async function handleAskCommand(interaction) {
     const chain = interaction.options.getInteger('chain') || 8453; // Base chain
     const amount = interaction.options.getInteger('amount') || 10000;
     
-    // Process command via orchestration module
+    // Validate URL parameter
+    const sanitizedUrl = sanitizeUrl(url);
+    if (!sanitizedUrl) {
+      return await sendError(interaction, 
+        "❌ Invalid or unsafe URL provided. Please check the URL format and ensure it doesn't contain dangerous content.");
+    }
+    
+    // Validate token address
+    if (!validateEthereumAddress(token)) {
+      return await sendError(interaction, 
+        "❌ Invalid token address format. Please provide a valid ERC20 token address starting with 0x followed by 40 hexadecimal characters.");
+    }
+    
+    // Validate token amount
+    if (!validateTokenAmount(amount)) {
+      return await sendError(interaction, 
+        "❌ Invalid token amount. Please provide a positive number within the safe integer range.");
+    }
+    
+    // Validate chain ID (simple range check, can be expanded)
+    if (chain <= 0 || chain > 100000) {
+      return await sendError(interaction, 
+        "❌ Invalid chain ID. Please provide a valid blockchain network ID.");
+    }
+    
+    // All parameters validated successfully
+    
+    // Process command via orchestration module with sanitized URL
     const result = await processQuizCommand({
-      url,
+      url: sanitizedUrl,
       token,
       chain,
       amount,
@@ -76,14 +104,14 @@ async function handleAskCommand(interaction) {
     
     // Handle error response
     if (!result.success) {
-      return await sendError(interaction, `Error creating quiz: ${result.error}`);
+      return await sendError(interaction, `❌ Error creating quiz: ${result.error}`);
     }
     
     // Success - send ephemeral preview with approval/cancel buttons
     await sendEphemeralPreview(interaction, result.quiz);
     
   } catch (error) {
-    await sendError(interaction, `Error creating quiz: ${error.message}`);
+    await sendError(interaction, `❌ Error creating quiz: ${error.message}`);
   }
 }
 
@@ -94,7 +122,9 @@ async function handleAskCommand(interaction) {
  */
 async function sendEphemeralPreview(interaction, quizData) {
   // Create unique ID for this quiz preview
-  const previewId = `quiz_${Date.now()}_${interaction.user.id}`;
+  const timestamp = Date.now();
+  const userId = interaction.user.id;
+  const previewId = `${timestamp}_${userId}`;
   
   try {
     // Create embed for preview
@@ -116,11 +146,11 @@ async function sendEphemeralPreview(interaction, quizData) {
     const row = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId(`approve_${previewId}`)
+          .setCustomId(`approve:${userId}:${timestamp}`)
           .setLabel('Create Quiz')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-          .setCustomId(`cancel_${previewId}`)
+          .setCustomId(`cancel:${userId}:${timestamp}`)
           .setLabel('Cancel')
           .setStyle(ButtonStyle.Danger)
       );
@@ -146,56 +176,87 @@ async function sendEphemeralPreview(interaction, quizData) {
  * @param {Object} quizData - Quiz data to publish
  */
 async function handleQuizApproval(interaction, quizData) {
+  // Interaction should already be deferred by the interaction handler
+  // but we'll check just in case
+  let isDeferred = interaction.deferred;
+
   try {
     // Extract user ID from interaction for security verification
     const interactionUserId = interaction.user?.id;
-    const buttonIdParts = interaction.customId?.split('_') || [];
+    const buttonIdParts = interaction.customId?.split(':') || [];
     
     // Security check: verify the user who clicked matches the user in the custom ID
     // This prevents user impersonation attacks
-    if (buttonIdParts.length >= 3 && buttonIdParts[2] !== interactionUserId) {
-      throw new Error('Unauthorized: You cannot approve a quiz created by someone else');
+    // The button ID format is: approve:userId:timestamp
+    if (buttonIdParts.length >= 2 && buttonIdParts[1] !== interactionUserId) {
+      console.log(`Button ID parts: ${buttonIdParts.join(', ')}`);
+      console.log(`Interaction user ID: ${interactionUserId}`);
+      
+      // Choose appropriate response method based on interaction state
+      if (isDeferred) {
+        await interaction.followUp({
+          content: 'Unauthorized: You cannot approve a quiz created by someone else',
+          ephemeral: true
+        }).catch(e => console.error('Failed to send unauthorized response:', e));
+      } else {
+        await interaction.reply({
+          content: 'Unauthorized: You cannot approve a quiz created by someone else',
+          ephemeral: true
+        }).catch(e => console.error('Failed to send unauthorized response:', e));
+      }
+      return;
     }
     
-    // Update interaction to show processing state
-    await interaction.update({
-      content: 'Creating quiz contract... Please wait.',
-      components: [],
-      embeds: []
-    });
+    // Ensure the interaction is deferred if it hasn't been already
+    if (!isDeferred) {
+      try {
+        await interaction.deferUpdate();
+        isDeferred = true;
+      } catch (deferError) {
+        console.error('Failed to defer update:', deferError);
+        // Try to reply instead
+        try {
+          await interaction.reply({
+            content: 'Processing your request...',
+            ephemeral: true
+          });
+          isDeferred = true;
+        } catch (replyError) {
+          console.error('Failed to reply:', replyError);
+          // At this point we can't interact, just continue and hope for the best
+        }
+      }
+    }
     
     // Generate quiz ID
     const quizId = `quiz_${Date.now()}`;
     
     // Create quiz escrow contract
-    // This is where the contract deployment happens and could fail
+    // For Phase 1, we'll use a mock implementation that completes quickly
     let contractAddress;
-    try {
-      // In a real implementation, this would create the actual contract
-      // For now we use a mock address, but we need to catch potential contract errors
-      contractAddress = '0xMockContractAddress';
-      
-      // Mock implementation to simulate contract creation
-      // The createQuizEscrow function could be imported from contracts/quizEscrow.js
-      // contractAddress = await createQuizEscrow({
-      //   quizId,
-      //   questions: quizData.questions,
-      //   tokenAddress: '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1',
-      //   chainId: 8453,
-      //   amount: 10000
-      // });
-    } catch (contractError) {
-      // Specific handling for contract deployment errors
-      console.error('Contract deployment failed:', contractError);
-      throw new Error(`Contract deployment failed: ${contractError.message}`);
-    }
     
-    // Update interaction to show success after contract is created
-    await interaction.update({
-      content: 'Quiz created successfully!',
-      components: [],
-      embeds: []
-    });
+    // Simulate a brief delay for contract creation (500ms)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // In Phase 1, we use a mock contract address
+    contractAddress = '0xMockContractAddress' + Math.floor(Math.random() * 1000);
+    
+    // Log for debugging
+    console.log(`Quiz contract created with address: ${contractAddress}`);
+    
+    // Update the message if possible
+    try {
+      if (isDeferred) {
+        await interaction.editReply({
+          content: 'Quiz created successfully! Questions will appear below.',
+          components: [],
+          embeds: []
+        });
+      }
+    } catch (editError) {
+      console.error('Failed to edit reply:', editError);
+      // Continue anyway - we'll still try to publish the quiz
+    }
     
     // Publish quiz to channel
     // This could fail if permissions are inadequate or message limits are exceeded
@@ -214,30 +275,30 @@ async function handleQuizApproval(interaction, quizData) {
     } catch (publishError) {
       console.error('Failed to publish quiz:', publishError);
       // We already created the contract, so we don't throw this error
-      // Instead, inform the user about partial success
-      await interaction.followUp({
-        content: `Quiz contract created but failed to publish: ${publishError.message}`,
-        ephemeral: true
-      });
+      // Instead, inform the user about partial success if possible
+      try {
+        if (isDeferred) {
+          await interaction.followUp({
+            content: `Quiz contract created but failed to publish: ${publishError.message}`,
+            ephemeral: true
+          });
+        }
+      } catch (followUpError) {
+        console.error('Failed to send followUp:', followUpError);
+      }
     }
   } catch (error) {
     // Handle any uncaught errors during the entire process
     console.error('Error in quiz approval flow:', error);
     
     try {
-      // Handle Discord interaction token expiration
-      if (error.code === 40060) { // INTERACTION_TIMEOUT
-        // Cannot respond to an expired interaction
-        console.error('Interaction token expired, cannot respond');
-        return;
+      // Try to inform the user if possible
+      if (isDeferred) {
+        await interaction.followUp({
+          content: `Error creating quiz: ${error.message}`,
+          ephemeral: true
+        });
       }
-      
-      // Update the interaction with error information
-      await interaction.update({
-        content: `Error creating quiz: ${error.message}`,
-        components: [],
-        embeds: []
-      });
     } catch (responseError) {
       // Even our error handling failed - this could happen with expired tokens
       console.error('Failed to send error response:', responseError);
@@ -298,22 +359,67 @@ async function publishQuiz(channel, quizData, quizId, contractAddress, rewardInf
   embed.setFooter({ text: `Expires: ${expiryDate.toUTCString()} | Quiz ID: ${quizId}` });
   embed.setTimestamp();
   
-  // Create question embeds
-  const questionEmbeds = quizData.questions.map((q, i) => {
-    const optionsText = q.options.map((opt, j) => `${['A', 'B', 'C', 'D'][j]}) ${opt}`).join('\n');
+  // First, send the main quiz introduction message without any questions
+  await channel.send({
+    content: 'New Quiz Available! Answer all questions for a chance to earn tokens.',
+    embeds: [embed]
+  });
+  
+  // Then send each question as a separate message with its own buttons
+  // This avoids Discord's component limitations (max 5 action rows per message)
+  for (let i = 0; i < quizData.questions.length; i++) {
+    const q = quizData.questions[i];
     
-    return new EmbedBuilder()
+    // Ensure we have exactly 5 options: 3 regular + "All of the above" + "None of the above"
+    let displayOptions = [];
+    
+    // If we have fewer than 3 regular options, fill in with generic ones
+    const regularOptions = q.options.slice(0, 3);
+    while (regularOptions.length < 3) {
+      regularOptions.push(`Option ${regularOptions.length + 1}`);
+    }
+    
+    // Add all 5 options: A, B, C, D, E
+    displayOptions = [
+      ...regularOptions,
+      'All of the above',
+      'None of the above'
+    ];
+    
+    // Create options text for display
+    const optionsText = displayOptions.map((opt, j) => 
+      `${['A', 'B', 'C', 'D', 'E'][j]}) ${opt}`
+    ).join('\n');
+    
+    // Create answer buttons for this question (5 buttons: A, B, C, D, E)
+    const buttonRow = new ActionRowBuilder();
+    ['A', 'B', 'C', 'D', 'E'].forEach((option, j) => {
+      buttonRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`quiz_answer:${quizId}:${i}:${j}`)
+          .setLabel(option)
+          .setStyle(ButtonStyle.Primary)
+      );
+    });
+    
+    // Create the question embed
+    const questionEmbed = new EmbedBuilder()
       .setTitle(`Question ${i+1}`)
       .setDescription(q.question)
       .addFields({ name: 'Options', value: optionsText })
       .setColor(0x00CCFF);
-  });
-  
-  // Send quiz to channel
-  await channel.send({
-    content: 'New Quiz Available! Answer all questions for a chance to earn tokens.',
-    embeds: [embed, ...questionEmbeds]
-  });
+    
+    // Send this question as a separate message with its own buttons
+    await channel.send({
+      embeds: [questionEmbed],
+      components: [buttonRow]
+    });
+    
+    // Add a small delay between messages to avoid rate limiting
+    if (i < quizData.questions.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
   
   return true;
 }
@@ -337,6 +443,81 @@ async function sendError(interaction, errorMessage) {
   }
 }
 
+/**
+ * Handle quiz answer button click
+ * @param {Object} interaction - Button interaction
+ */
+async function handleQuizAnswer(interaction) {
+  try {
+    // Parse button custom ID to extract quiz ID, question number, and selected option
+    // Format: quiz_answer:quizId:questionNumber:optionIndex
+    const [, quizId, questionNumber, optionIndex] = interaction.customId.split(':');
+    
+    // Get the option letter user selected (A, B, C, D, or E)
+    const optionLetter = ['A', 'B', 'C', 'D', 'E'][parseInt(optionIndex)];
+    
+    // First, acknowledge the user's selection with an ephemeral reply
+    await interaction.reply({
+      content: `Your answer (${optionLetter}) for Question ${parseInt(questionNumber) + 1} has been recorded.`,
+      ephemeral: true
+    });
+    
+    // Get the original message to update the buttons
+    const originalMessage = interaction.message;
+    
+    // Create a new set of disabled buttons
+    const disabledButtonRow = new ActionRowBuilder();
+    ['A', 'B', 'C', 'D', 'E'].forEach((option, j) => {
+      // Create a button for each option, but all disabled
+      // Highlight the selected option with a different style
+      const button = new ButtonBuilder()
+        .setCustomId(`quiz_answer:${quizId}:${questionNumber}:${j}`)
+        .setLabel(option)
+        .setDisabled(true);
+      
+      // Set the style - SUCCESS for the selected option, SECONDARY for others
+      if (j === parseInt(optionIndex)) {
+        button.setStyle(ButtonStyle.Success); // Green for selected
+      } else {
+        button.setStyle(ButtonStyle.Secondary); // Grey for other options
+      }
+      
+      disabledButtonRow.addComponents(button);
+    });
+    
+    // Update the original message with disabled buttons
+    await originalMessage.edit({
+      components: [disabledButtonRow]
+    });
+    
+    // Record the answer in a database (mock implementation)
+    console.log(`User ${interaction.user.id} answered question ${questionNumber} with option ${optionIndex}`);
+    
+    // Here we would actually call the quiz answer processor function for a real implementation
+    // await processQuizAnswer(quizId, interaction.user.id, parseInt(questionNumber), parseInt(optionIndex));
+    
+  } catch (error) {
+    console.error('Error handling quiz answer:', error);
+    try {
+      await interaction.reply({
+        content: 'There was an error processing your answer. Please try again.',
+        ephemeral: true
+      });
+    } catch (replyError) {
+      // If we've already replied, use followUp instead
+      console.error('Error replying to interaction:', replyError);
+      try {
+        await interaction.followUp({
+          content: 'There was an error processing your answer. Please try again.',
+          ephemeral: true
+        });
+      } catch (followUpError) {
+        console.error('Error with followUp:', followUpError);
+      }
+    }
+  }
+}
+
 // Export the command as the default export for discord.js command handling
 module.exports = askCommand;
 
@@ -348,3 +529,4 @@ module.exports.handleQuizApproval = handleQuizApproval;
 module.exports.handleQuizCancellation = handleQuizCancellation;
 module.exports.publishQuiz = publishQuiz;
 module.exports.sendError = sendError;
+module.exports.handleQuizAnswer = handleQuizAnswer;

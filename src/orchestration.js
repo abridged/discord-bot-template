@@ -333,7 +333,8 @@ async function processQuizCommand(commandParams) {
         }
       }
 
-      log(`Generating quiz from URL: ${sanitizedUrl}`);
+      // Debug info for quiz generation
+      console.log(`Generating quiz from URL: ${sanitizedUrl}`);
 
       // Generate quiz from URL
       const rawQuizData = await generateQuiz(sanitizedUrl);

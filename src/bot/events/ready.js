@@ -39,11 +39,13 @@ module.exports = {
     });
     
     // Initialize quiz expiry mechanism
-    try {
-      await client.initializeQuizExpiry();
-    } catch (error) {
-      console.error('Failed to initialize quiz expiry:', error);
-    }
+    // TODO: Implement quiz expiry functionality in Phase 2
+    // The following code is commented out as the function doesn't exist yet
+    // try {
+    //   await client.initializeQuizExpiry();
+    // } catch (error) {
+    //   console.error('Failed to initialize quiz expiry:', error);
+    // }
     
     // Emit ready event to notify other subsystems
     if (client.emit) {
