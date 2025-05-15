@@ -1,0 +1,136 @@
+@llms.txt 0.1
+
+# Discord Bot LLM Quiz System - Updated Implementation Details
+
+## Project Context
+
+This project is a Discord bot that generates token-incentivized quizzes from web content. The bot extracts content from a URL, uses an LLM to generate quiz questions, and presents these to users in Discord with interactive buttons. Correct answers can earn users token rewards.
+
+## Recent Work Summary
+
+We've fixed multiple issues with the quiz option display and enhanced the quiz generation prompt to be more engaging and topic-agnostic.
+
+## Key Components
+
+### Component: Quiz Generation System
+
+The quiz generation workflow:
+1. User provides a URL via `/ask` command
+2. Content is extracted from the URL
+3. LLM generates questions and options based on the content
+4. Quiz is presented for admin approval
+5. Approved quiz is published with interactive buttons
+6. Users answer questions by clicking option buttons
+
+### Component: Answer Options Display Fix
+
+**Problem**: LLM-generated answer options weren't properly displayed in Discord. Instead, generic placeholders like "Option A" were shown.
+
+**Root cause**: The interaction handler in `interactionCreate.js` was recreating quiz data without preserving original options.
+
+**Solution**: 
+- Implemented a cache system on the Discord client to store complete quiz data
+- Modified the approval button to include a cache key to retrieve the data
+- Updated the interaction handler to retrieve quiz data from cache
+- Added logging to trace data flow through the system
+
+### Component: Enhanced Quiz Options
+
+- Added "All of the above" and "None of the above" options to every question
+- Modified the quiz display to always show exactly 5 options
+- Updated the LLM prompt to ensure compatibility with these additions
+
+### Component: Improved LLM Prompt
+
+The prompt was enhanced to:
+- Be more engaging and friendly with a bit of flair
+- Work with any content topic (not just blockchain)
+- Create more entertaining questions
+- Include difficulty-specific instructions for varied quiz experiences
+
+### Component: User Answer Processing
+
+**Current implementation**:
+- Answers are recorded in the console but not persistently stored
+- There's a placeholder for the full implementation: `processQuizAnswer()` function
+- UI updates to show which option was selected (green button)
+
+**Needed implementation**:
+- Database schema for storing user answers
+- Storage service implementation
+- Reporting capabilities
+
+## Key Files
+
+### File: /src/bot/commands/ask.js
+Handles the `/ask` command, quiz preview, approval, and question display.
+
+**Key functions**:
+- `handleAskCommand()`: Entry point for the slash command
+- `sendEphemeralPreview()`: Shows the quiz preview with approval buttons
+- `handleQuizApproval()`: Processes quiz approval button click
+- `publishQuiz()`: Publishes the approved quiz to the channel
+- `handleQuizAnswer()`: Processes user answers to quiz questions
+
+### File: /src/services/llm/promptTemplates.js
+Contains the prompt templates for the LLM quiz generation.
+
+**Key changes**:
+- Enhanced prompts to be more engaging
+- Made difficulty instructions more specific
+- Ensured compatibility with "All of the above"/"None of the above" options
+- Removed blockchain-specific language to make it topic-agnostic
+
+### File: /src/bot/events/interactionCreate.js
+Handles all Discord interactions, including quiz approval.
+
+**Key changes**:
+- Modified to retrieve cached quiz data instead of recreating it
+- Added better error handling for interactions
+
+### File: /src/services/quiz/orchestrator.js
+Orchestrates the quiz creation process.
+
+**Key function**:
+- `createQuizFromUrl()`: Coordinates content extraction, question generation, and validation
+
+## Technical Debt & Future Work
+
+1. **Persistent Storage**: Implement database storage for quiz answers
+2. **Question Correctness**: Add mechanisms to validate and verify LLM-generated correct answers
+3. **Reporting**: Create analytics for quiz performance and participation
+4. **User Experience**: Consider additional question types beyond multiple choice
+
+## Common Issues & Solutions
+
+**Issue**: Quiz options don't appear correctly.
+**Solution**: Check the data flow from generation to display. Use logging to trace the options at each step.
+
+**Issue**: LLM outputs incorrect formatted JSON.
+**Solution**: The enhanced JSON parsing in `quizGenerator.js` handles many formatting issues, but check the console logs for parsing errors.
+
+**Issue**: Difficulty level isn't affecting questions.
+**Solution**: Verify the prompt in `promptTemplates.js` and ensure the difficulty parameter is being passed correctly.
+
+## Configuration Settings
+
+- **LLM Model**: Set in `.env` as `LLM_MODEL`
+- **LLM Temperature**: Set in `.env` as `LLM_TEMPERATURE`
+- **Default quiz settings**: 3 questions, medium difficulty
+
+## Test Cases
+
+To verify the implementation works:
+1. Run `/ask url:https://en.wikipedia.org/wiki/Blockchain token:0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1 chain:8453 amount:10000`
+2. Approve the quiz preview
+3. Verify questions display with 5 options each
+4. Test answering questions with different options
+5. Verify buttons update correctly
+
+## Current State
+
+The system is functional with LLM-generated answers displaying correctly, but lacks persistent storage for user answers. The next development focus should be implementing the database storage system for quiz answers and statistics.
+
+@tags: discord-bot, quiz-system, llm-integration, user-interaction
+@status: in-progress
+@last-updated: 2025-05-15

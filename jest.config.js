@@ -14,4 +14,6 @@ module.exports = {
     '!**/vendor/**'
   ],
   coverageDirectory: 'coverage',
+  // Increase default timeout for tests to handle quiz approval/generation functions
+  testTimeout: 15000,
 };

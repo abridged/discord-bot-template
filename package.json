@@ -15,10 +15,14 @@
     "tunnel": "node -e \"const domain = require('dotenv').config().parsed.NGROK_DOMAIN; console.log(`Starting direct ngrok tunnel to ${domain}...`); require('child_process').spawn('npx', ['ngrok', 'http', '--hostname=' + domain, '3000'], {stdio: 'inherit'});\""
   },
   "dependencies": {
+    "axios": "^1.9.0",
+    "cheerio": "^1.0.0",
     "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.5.0",
     "ethers": "^5.7.2",
     "next": "14.1.0",
+    "node-cache": "^5.1.2",
+    "openai": "^4.98.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sanitize-html": "^2.16.0"

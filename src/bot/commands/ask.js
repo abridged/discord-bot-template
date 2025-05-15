@@ -6,8 +6,10 @@
 
 const { SlashCommandBuilder } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const { processQuizCommand } = require('../../orchestration');
 const { sanitizeUrl, validateTokenAmount, validateEthereumAddress } = require('../../security/inputSanitizer');
+
+// Import the new quiz generation service
+const { createQuizFromUrl } = require('../../services/quiz');
 
 /**
  * /ask command definition
@@ -93,22 +95,31 @@ async function handleAskCommand(interaction) {
     
     // All parameters validated successfully
     
-    // Process command via orchestration module with sanitized URL
-    const result = await processQuizCommand({
-      url: sanitizedUrl,
-      token,
-      chain,
-      amount,
-      userId: interaction.user?.id || 'test_user_id'
-    });
-    
-    // Handle error response
-    if (!result.success) {
-      return await sendError(interaction, `❌ Error creating quiz: ${result.error}`);
+    // Create quiz using our new service
+    try {
+      // First, acknowledge the interaction to prevent timeouts
+      await interaction.deferReply({ ephemeral: true });
+      
+      // Generate quiz using our new service
+      const quiz = await createQuizFromUrl(sanitizedUrl, {
+        numQuestions: 3,  // Default to 3 questions
+        difficulty: 'medium'
+      });
+      
+      // Add token and chain information to the quiz
+      const quizWithMeta = {
+        ...quiz,
+        tokenAddress: token,
+        chainId: chain,
+        rewardAmount: amount,
+        userId: interaction.user?.id || 'test_user_id'
+      };
+      
+      // Success - send ephemeral preview with approval/cancel buttons
+      await sendEphemeralPreview(interaction, quizWithMeta);
+    } catch (error) {
+      return await sendError(interaction, `❌ Error creating quiz: ${error.message}`);
     }
-    
-    // Success - send ephemeral preview with approval/cancel buttons
-    await sendEphemeralPreview(interaction, result.quiz);
     
   } catch (error) {
     await sendError(interaction, `❌ Error creating quiz: ${error.message}`);
@@ -127,6 +138,16 @@ async function sendEphemeralPreview(interaction, quizData) {
   const previewId = `${timestamp}_${userId}`;
   
   try {
+    // Store the complete quiz data in a global client cache for retrieval during approval
+    if (!interaction.client.quizCache) {
+      interaction.client.quizCache = new Map();
+    }
+    
+    // Store the full quiz data with a unique key for retrieval
+    const quizCacheKey = `quiz_${userId}_${timestamp}`;
+    interaction.client.quizCache.set(quizCacheKey, quizData);
+    console.log(`Stored full quiz data in cache with key: ${quizCacheKey}`);
+    
     // Create embed for preview
     const embed = new EmbedBuilder()
       .setTitle('Quiz Preview')
@@ -142,11 +163,11 @@ async function sendEphemeralPreview(interaction, quizData) {
       embed.addFields({ name: `Question ${i+1}`, value: q.question });
     });
     
-    // Create approval/cancel buttons
+    // Create approval/cancel buttons with the cache key included
     const row = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId(`approve:${userId}:${timestamp}`)
+          .setCustomId(`approve:${userId}:${timestamp}:${quizCacheKey}`)
           .setLabel('Create Quiz')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
@@ -156,11 +177,19 @@ async function sendEphemeralPreview(interaction, quizData) {
       );
     
     // Send ephemeral message with preview
-    await interaction.reply({
-      embeds: [embed],
-      components: [row],
-      ephemeral: true
-    });
+    // If interaction is already deferred, use editReply instead of reply
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({
+        embeds: [embed],
+        components: [row]
+      });
+    } else {
+      await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
+    }
     
     return true;
   } catch (error) {
@@ -244,6 +273,9 @@ async function handleQuizApproval(interaction, quizData) {
     // Log for debugging
     console.log(`Quiz contract created with address: ${contractAddress}`);
     
+    // DEEP DEBUGGING: Log the entire quizData object to find transformation issues
+    console.log('QUIZ DATA AT APPROVAL STAGE:', JSON.stringify(quizData, null, 2));
+    
     // Update the message if possible
     try {
       if (isDeferred) {
@@ -326,6 +358,10 @@ async function handleQuizCancellation(interaction) {
  * @param {string} contractAddress - Quiz escrow contract address
  * @param {Object} rewardInfo - Token reward information
  */
+/**
+ * Quiz publishing functions below
+ */
+
 async function publishQuiz(channel, quizData, quizId, contractAddress, rewardInfo) {
   // Create expiry date (end of next day UTC)
   const expiryDate = new Date();
@@ -370,37 +406,59 @@ async function publishQuiz(channel, quizData, quizId, contractAddress, rewardInf
   for (let i = 0; i < quizData.questions.length; i++) {
     const q = quizData.questions[i];
     
-    // Ensure we have exactly 5 options: 3 regular + "All of the above" + "None of the above"
-    let displayOptions = [];
+    // CRITICAL FIX: Use the EXACT options from the LLM without any modifications
+    // Log the raw question data to console for debugging
+    console.log(`Publishing question ${i+1}:`, JSON.stringify(q, null, 2));
     
-    // If we have fewer than 3 regular options, fill in with generic ones
-    const regularOptions = q.options.slice(0, 3);
-    while (regularOptions.length < 3) {
-      regularOptions.push(`Option ${regularOptions.length + 1}`);
+    // Ensure option data is properly accessed regardless of property name
+    // Handle potential property name mismatches (options vs answer vs correctOptionIndex)
+    let rawOptions = q.options || [];
+    
+    // Check if the property might be called 'answer' instead of 'correctOptionIndex'
+    let correctIndex = q.correctOptionIndex;
+    if (correctIndex === undefined && q.answer !== undefined) {
+      correctIndex = q.answer;
+      console.log(`Using 'answer' property instead of 'correctOptionIndex': ${correctIndex}`);
     }
     
-    // Add all 5 options: A, B, C, D, E
-    displayOptions = [
-      ...regularOptions,
-      'All of the above',
-      'None of the above'
-    ];
+    console.log(`Raw options for question ${i+1}:`, rawOptions);
     
-    // Create options text for display
+    // Add "All of the above" and "None of the above" to every question's options
+    // First, ensure we have the original options (up to 3)
+    let displayOptions = [];
+    
+    // Take up to 3 options from the raw options
+    for (let j = 0; j < Math.min(rawOptions.length, 3); j++) {
+      displayOptions.push(rawOptions[j] || `Option ${j+1}`);
+    }
+    
+    // Add "All of the above" and "None of the above" options
+    displayOptions.push('All of the above');
+    displayOptions.push('None of the above');
+    
+    // Create options text for display with letter prefixes
     const optionsText = displayOptions.map((opt, j) => 
       `${['A', 'B', 'C', 'D', 'E'][j]}) ${opt}`
     ).join('\n');
     
-    // Create answer buttons for this question (5 buttons: A, B, C, D, E)
+    // Create answer buttons for this question - create a button for each option
     const buttonRow = new ActionRowBuilder();
-    ['A', 'B', 'C', 'D', 'E'].forEach((option, j) => {
+    
+    // Get the available labels based on number of options
+    const labels = ['A', 'B', 'C', 'D', 'E'];
+    
+    // Always display 5 options (3 specific + "All of the above" + "None of the above")
+    const optionsToDisplay = 5;
+    
+    // Create one button per option
+    for (let j = 0; j < optionsToDisplay; j++) {
       buttonRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`quiz_answer:${quizId}:${i}:${j}`)
-          .setLabel(option)
+          .setLabel(labels[j])
           .setStyle(ButtonStyle.Primary)
       );
-    });
+    }
     
     // Create the question embed
     const questionEmbed = new EmbedBuilder()

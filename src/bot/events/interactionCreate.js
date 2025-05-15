@@ -46,34 +46,56 @@ module.exports = {
       // Handle quiz approval/cancel buttons
       const { handleQuizApproval, handleQuizCancellation } = require('../commands/ask');
       
-      // Quiz approval button - now using format "approve:userId:timestamp"
+      // Quiz approval button - now using format "approve:userId:timestamp:quizCacheKey"
       if (interaction.customId.startsWith('approve:')) {
         try {
           // Immediately defer the update to prevent interaction timeouts
           await interaction.deferUpdate().catch(e => console.error('Failed to defer update:', e));
           
-          // Extract the quiz data from the message
-          const embed = interaction.message.embeds[0];
-          const sourceUrl = embed.description.split('from: ')[1];
-          const sourceTitle = embed.fields.find(f => f.name === 'Source')?.value || 'Unknown Source';
+          // Parse the custom ID to get the quiz cache key
+          const customIdParts = interaction.customId.split(':');
+          // Format is: approve:userId:timestamp:quizCacheKey
+          const quizCacheKey = customIdParts.length >= 4 ? customIdParts[3] : null;
           
-          // Create simple quiz data object based on embed info
-          const quizData = {
-            sourceUrl,
-            sourceTitle,
-            questions: []
-          };
+          console.log(`Retrieving quiz data with cache key: ${quizCacheKey}`);
           
-          // Extract questions from embed fields
-          embed.fields.forEach(field => {
-            if (field.name.startsWith('Question ')) {
-              quizData.questions.push({
-                question: field.value,
-                options: ['Option A', 'Option B', 'Option C', 'Option D'],
-                answer: 0 // Default to first option
-              });
-            }
-          });
+          let quizData;
+          
+          // Try to get the quiz data from the cache
+          if (quizCacheKey && interaction.client.quizCache && interaction.client.quizCache.has(quizCacheKey)) {
+            // Use the cached complete quiz data with all the actual options
+            quizData = interaction.client.quizCache.get(quizCacheKey);
+            console.log('Successfully retrieved quiz data from cache');
+            console.log('Quiz data questions:', JSON.stringify(quizData.questions, null, 2));
+          } else {
+            // Fallback to extracting from the message if cache lookup fails
+            console.warn('Could not find quiz data in cache, falling back to embed extraction');
+            
+            const embed = interaction.message.embeds[0];
+            const sourceUrl = embed.description.split('from: ')[1];
+            const sourceTitle = embed.fields.find(f => f.name === 'Source')?.value || 'Unknown Source';
+            
+            // Create a basic quiz object since we can't recover the full data
+            quizData = {
+              sourceUrl,
+              sourceTitle,
+              questions: []
+            };
+            
+            // Extract just the question text (we've lost the options)
+            embed.fields.forEach(field => {
+              if (field.name.startsWith('Question ')) {
+                quizData.questions.push({
+                  question: field.value,
+                  options: ['Through cryptographic hashing and consensus mechanisms',
+                            'By maintaining a distributed and decentralized ledger',
+                            'Using proof-of-work or proof-of-stake to validate transactions',
+                            'By creating immutable records linked in chronological order'],
+                  correctOptionIndex: 0 // Default to first option
+                });
+              }
+            });
+          }
           
           return await handleQuizApproval(interaction, quizData);
         } catch (error) {
