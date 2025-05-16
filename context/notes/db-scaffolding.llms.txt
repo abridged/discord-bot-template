@@ -1,0 +1,263 @@
+title: "Temporary Database Scaffolding for Discord Quiz Bot"
+date: 2025-05-16
+author: "Development Team"
+version: 0.1.0
+tags: ["discord-bot", "database", "blockchain", "migration", "scaffolding"]
+
+# CONTEXT
+
+## Project Overview
+We are developing a Discord bot that creates token-incentivized quizzes based on web content URLs. The final product will use blockchain technology (via Account Kit) to record all quiz data and handle token rewards. However, due to dependencies on Account Kit integration, we need a temporary database solution to continue development of user-facing features like leaderboards.
+
+## Current Status
+- Quiz functionality working with the `/ask` command
+- Prompts, answer options, and difficulty levels implemented
+- No persistent storage for quiz answers yet
+- Awaiting Account Kit integration for blockchain transactions
+
+## Requirements
+- Need to track quiz results for leaderboard functionality
+- All data structures should be designed for eventual blockchain migration
+- Database solution should be easily deployable with the bot
+- Clean architecture needed to minimize refactoring during migration
+
+# APPROACH
+
+## Database Selection and Strategy
+We will use SQLite for the initial implementation because:
+1. It's lightweight and can be packaged with the Discord bot
+2. No need for a separate database server
+3. Easy migration to other systems later
+4. Suitable for our data volume during development
+
+## Architecture Pattern
+We'll implement a Repository Pattern with clean interfaces:
+
+```javascript
+// Interface (to be used throughout the application)
+interface IQuizRepository {
+  saveQuiz(quiz: QuizData): Promise<string>; // Returns quiz ID
+  getQuiz(id: string): Promise<QuizData>;
+  saveAnswer(answer: AnswerData): Promise<string>; // Returns answer ID
+  getLeaderboard(options?: LeaderboardOptions): Promise<LeaderboardEntry[]>;
+  // Additional methods...
+}
+
+// Concrete implementation for database
+class DatabaseQuizRepository implements IQuizRepository {
+  // Implementation using database...
+}
+
+// Future implementation for blockchain
+class BlockchainQuizRepository implements IQuizRepository {
+  // Implementation using Account Kit and blockchain...
+}
+```
+
+## Data Models
+The following data models will be consistent across both database and blockchain implementations:
+
+### QuizData Model
+```typescript
+interface QuizData {
+  id: string;                   // UUID in DB, tx hash on blockchain
+  creatorDiscordId: string;     // Discord user ID
+  creatorWalletAddress: string; // Ethereum address (may be null initially)
+  sourceUrl: string;            // Content URL
+  questions: QuestionData[];    // Array of questions
+  difficulty: string;           // "easy", "medium", "hard"
+  tokenAddress: string;         // ERC20 token address
+  chainId: number;              // Chain ID (e.g., 8453 for Base)
+  rewardAmount: string;         // String representation of BigInt
+  createdAt: number;            // Unix timestamp
+  expiresAt: number;            // Unix timestamp
+  quizHash: string;             // Hash for verification
+}
+```
+
+### QuestionData Model
+```typescript
+interface QuestionData {
+  id: string;                   // UUID in DB, index on blockchain
+  quizId: string;               // Reference to parent quiz
+  questionText: string;         // The question
+  options: string[];            // Answer options
+  correctOptionIndex: number;   // Index of correct answer
+  order: number;                // Display order
+}
+```
+
+### AnswerData Model
+```typescript
+interface AnswerData {
+  id: string;                   // UUID in DB, tx hash on blockchain
+  quizId: string;               // Reference to quiz
+  questionId: string;           // Reference to question
+  userDiscordId: string;        // Discord user ID
+  userWalletAddress: string;    // Ethereum address (may be null initially)
+  selectedOptionIndex: number;  // User's answer choice
+  isCorrect: boolean;           // Whether answer was correct
+  answeredAt: number;           // Unix timestamp
+  transactionHash: string;      // Blockchain TX hash (null in DB phase)
+}
+```
+
+### LeaderboardEntry Model
+```typescript
+interface LeaderboardEntry {
+  userDiscordId: string;        // Discord user ID
+  userWalletAddress: string;    // Ethereum address (may be null initially)
+  userName: string;             // Discord username (fetched on display)
+  totalAnswered: number;        // Total questions answered (expired quizzes only)
+  correctAnswers: number;       // Total correct answers (expired quizzes only)
+  accuracy: number;             // Percentage correct (0-100) (expired quizzes only)
+  quizzesTaken: number;         // Total number of quizzes attempted
+  expiredQuizzesTaken: number;  // Number of completed quizzes (expired)
+  activeQuizzesTaken: number;   // Number of ongoing quizzes (not expired)
+  lastActive: number;           // Unix timestamp
+}
+```
+
+## Blockchain Simulation
+We'll create a `MockBlockchainService` that:
+1. Logs intended transactions to console
+2. Stores transaction intent in the database
+3. Generates mock transaction hashes
+4. Simulates blockchain confirmation delays
+
+## Leaderboard Implementation Details
+
+### Anti-Cheating Security Measures
+To maintain quiz integrity and prevent users from helping others cheat:
+
+1. **Score Visibility Control**:
+   - All score metrics (correctAnswers, totalAnswered, accuracy) only count answers from expired quizzes
+   - Users can see participation in active quizzes but not their scores or answers
+   - Full leaderboard stats become visible only after quiz expiration
+
+2. **SQL Implementation**:
+   ```sql
+   -- Example query structure for getLeaderboard with anti-cheating measures
+   SELECT 
+     answers.userDiscordId,
+     -- Only count correct answers from expired quizzes
+     SUM(CASE WHEN quizzes.expiresAt < :currentTime AND answers.isCorrect = 1 THEN 1 ELSE 0 END) as correctAnswers,
+     -- Only count questions from expired quizzes for scoring
+     COUNT(DISTINCT CASE WHEN quizzes.expiresAt < :currentTime THEN answers.questionId ELSE NULL END) as totalAnswered,
+     -- Track participation separately
+     COUNT(DISTINCT answers.quizId) as quizzesTaken,
+     COUNT(DISTINCT CASE WHEN quizzes.expiresAt < :currentTime THEN answers.quizId ELSE NULL END) as expiredQuizzesTaken,
+     COUNT(DISTINCT CASE WHEN quizzes.expiresAt >= :currentTime THEN answers.quizId ELSE NULL END) as activeQuizzesTaken
+   FROM answers
+   JOIN quizzes ON answers.quizId = quizzes.id
+   GROUP BY answers.userDiscordId
+   ```
+
+3. **UI Display Logic**:
+   - Global Leaderboard: Shows only expired quiz scores but indicates active participation
+   - Personal Stats: Shows participation in all quizzes with clear messaging about why scores for active quizzes are hidden
+   - Custom messages for cases where users have only participated in active quizzes but none have expired yet
+
+### User Experience Improvements
+
+1. **Username Display**:
+   - Fetch and display actual Discord usernames instead of Discord IDs
+   - Use `interaction.client.users.fetch()` to get user objects
+   - Handle cases where user fetch might fail with appropriate fallbacks
+
+2. **Contextual Messaging**:
+   - Clear explanations about anti-cheating measures
+   - Different messages based on quiz participation state
+   - Informative empty state messages
+
+```typescript
+interface IBlockchainService {
+  submitQuiz(quiz: QuizData): Promise<string>; // Returns tx hash
+  submitAnswer(answer: AnswerData): Promise<string>; // Returns tx hash
+  getTransactionStatus(txHash: string): Promise<TransactionStatus>;
+}
+
+class MockBlockchainService implements IBlockchainService {
+  // Implementation that simulates blockchain behavior
+}
+```
+
+# IMPLEMENTATION PLAN
+
+## Phase 1: Database Setup (Days 1-2)
+- Set up SQLite database with Knex.js or Sequelize ORM
+- Create migration scripts for all tables
+- Implement base repository classes
+
+## Phase 2: Repository Integration (Days 3-4)
+- Integrate repository with existing quiz generation code
+- Modify answer handling to store responses
+- Implement mock blockchain service
+
+## Phase 3: Leaderboard Development (Days 5-7)
+- Create leaderboard query service
+- Implement `/leaderboard` Discord command
+- Create leaderboard views (global, weekly, by quiz)
+
+## Phase 4: Testing and Refinement (Days 8-10)
+- Unit test repository implementations
+- Integration tests for quiz flow
+- Mock blockchain transition tests
+
+# MIGRATION STRATEGY
+
+## Blockchain Transition
+When Account Kit integration is ready:
+
+1. Implement `BlockchainQuizRepository` using same interfaces
+2. Create migration utility to push historical data to blockchain
+3. Switch service registration from mock to real implementations
+4. Retain database as cache/fallback
+
+## Code Changes Required
+The migration should require minimal code changes:
+
+```javascript
+// Before (using database)
+const quizRepository = new DatabaseQuizRepository();
+const blockchainService = new MockBlockchainService();
+
+// After (using blockchain)
+const quizRepository = new BlockchainQuizRepository(accountKit);
+const blockchainService = new AccountKitBlockchainService(accountKit);
+```
+
+# TECHNICAL NOTES
+
+## Hashing Strategy
+To ensure database records can be verified on-chain later:
+- Quiz data will be hashed using keccak256
+- Answer submissions will include quiz and question hashes
+- These hashes will be stored in both database and blockchain
+
+## Database Schema Design Considerations
+- Foreign keys for referential integrity
+- Indexes on frequently queried columns
+- JSON columns for flexible data storage where appropriate
+- Timestamps for all records
+
+## Rate Limiting and Protection
+- Implement rate limiting at the Discord command level
+- Add abuse protection for answer submissions
+- Monitor database size and implement pruning strategies if needed
+
+# FUTURE ENHANCEMENTS
+
+Once blockchain integration is complete:
+1. Add proof verification for answers
+2. Implement token reward distribution
+3. Create on-chain leaderboard contracts
+4. Add wallet connection flow for Discord users
+
+# DOCUMENTATION NEEDS
+
+Documentation required during implementation:
+1. Repository interface specifications
+2. Database schema ERD
+3. Blockchain transition guide
+4. Testing strategy for both database and blockchain implementations

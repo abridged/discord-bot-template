@@ -11,6 +11,9 @@ const { sanitizeUrl, validateTokenAmount, validateEthereumAddress } = require('.
 // Import the new quiz generation service
 const { createQuizFromUrl } = require('../../services/quiz');
 
+// Import the storage service
+const { saveQuiz, saveAnswer, getQuiz } = require('../../services/storage');
+
 /**
  * /ask command definition
  */
@@ -257,11 +260,44 @@ async function handleQuizApproval(interaction, quizData) {
       }
     }
     
-    // Generate quiz ID
-    const quizId = `quiz_${Date.now()}`;
+    // Create expiry date (end of next day UTC)
+    const expiryDate = new Date();
+    expiryDate.setUTCDate(expiryDate.getUTCDate() + 1);
+    expiryDate.setUTCHours(23, 59, 59, 999);
     
-    // Create quiz escrow contract
-    // For Phase 1, we'll use a mock implementation that completes quickly
+    // Save quiz to database
+    let quizId;
+    try {
+      // Prepare quiz data for storage
+      const quizDataForStorage = {
+        creatorDiscordId: interaction.user.id,
+        creatorWalletAddress: null, // Will be populated when Account Kit is integrated
+        sourceUrl: quizData.sourceUrl,
+        difficulty: quizData.difficulty || 'medium',
+        tokenAddress: quizData.tokenAddress || '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1',
+        chainId: quizData.chainId || 8453,
+        rewardAmount: (quizData.rewardAmount || 10000).toString(),
+        expiresAt: expiryDate,
+        questions: quizData.questions.map((q, index) => ({
+          questionText: q.text || q.question, // Handle different property names
+          options: q.options || [],
+          correctOptionIndex: q.correctOptionIndex !== undefined ? q.correctOptionIndex : (q.answer !== undefined ? q.answer : 0),
+          order: index
+        }))
+      };
+      
+      // Save the quiz to database and get generated ID
+      quizId = await saveQuiz(quizDataForStorage);
+      console.log(`Quiz saved to database with ID: ${quizId}`);
+    } catch (dbError) {
+      console.error('Error saving quiz to database:', dbError);
+      // Use a fallback ID if database save fails
+      quizId = `quiz_${Date.now()}`;
+      console.log(`Using fallback quiz ID: ${quizId} due to database error`);
+    }
+    
+    // Create quiz escrow contract (mock for now)
+    // This will be replaced with real contract creation via Account Kit later
     let contractAddress;
     
     // Simulate a brief delay for contract creation (500ms)
@@ -548,11 +584,49 @@ async function handleQuizAnswer(interaction) {
       components: [disabledButtonRow]
     });
     
-    // Record the answer in a database (mock implementation)
-    console.log(`User ${interaction.user.id} answered question ${questionNumber} with option ${optionIndex}`);
-    
-    // Here we would actually call the quiz answer processor function for a real implementation
-    // await processQuizAnswer(quizId, interaction.user.id, parseInt(questionNumber), parseInt(optionIndex));
+    // Save the answer to the database
+    try {
+      // First, get the quiz from database to determine if the answer is correct
+      const quiz = await getQuiz(quizId);
+      if (!quiz) {
+        console.error(`Quiz ${quizId} not found in database`);
+        return;
+      }
+      
+      // Find the relevant question
+      const questionIndex = parseInt(questionNumber);
+      const question = quiz.questions.find(q => q.order === questionIndex);
+      
+      if (!question) {
+        console.error(`Question ${questionIndex} not found in quiz ${quizId}`);
+        return;
+      }
+      
+      // Determine if the answer is correct
+      const selectedOption = parseInt(optionIndex);
+      const isCorrect = selectedOption === question.correctOptionIndex;
+      
+      // Save the answer
+      const answerData = {
+        quizId: quizId,
+        questionId: question.id,
+        userDiscordId: interaction.user.id,
+        userWalletAddress: null, // Will be populated when Account Kit is integrated
+        selectedOptionIndex: selectedOption,
+        isCorrect: isCorrect
+      };
+      
+      const answerId = await saveAnswer(answerData);
+      console.log(`Answer saved to database with ID: ${answerId}. Correct: ${isCorrect}`);
+      
+      // Also log to console for debugging
+      console.log(`User ${interaction.user.id} answered question ${questionNumber} with option ${optionIndex} - ${isCorrect ? 'Correct' : 'Incorrect'}`);
+    } catch (dbError) {
+      // Log error but don't show to user to avoid disrupting the experience
+      console.error('Error saving answer to database:', dbError);
+      // Still log the answer to console as a backup
+      console.log(`User ${interaction.user.id} answered question ${questionNumber} with option ${optionIndex} (not saved to DB)`);
+    }
     
   } catch (error) {
     console.error('Error handling quiz answer:', error);

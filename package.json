@@ -25,7 +25,12 @@
     "openai": "^4.98.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "sanitize-html": "^2.16.0"
+    "sanitize-html": "^2.16.0",
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3",
+    "sqlite3": "^5.1.7",
+    "umzug": "^3.8.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

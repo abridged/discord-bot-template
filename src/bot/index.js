@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Events, Collection } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { initialize: initializeStorage } = require('../services/storage');
 
 // Create a new client instance
 const client = new Client({
@@ -45,5 +46,21 @@ for (const file of eventFiles) {
   }
 }
 
-// Log in to Discord with your client's token
-client.login(process.env.DISCORD_TOKEN);
+// Initialize database and storage services
+initializeStorage()
+  .then(success => {
+    if (success) {
+      console.log('Storage service initialized successfully');
+    } else {
+      console.warn('Storage service initialization failed, some features may not work correctly');
+    }
+    
+    // Log in to Discord with your client's token
+    client.login(process.env.DISCORD_TOKEN);
+  })
+  .catch(error => {
+    console.error('Failed to initialize storage services:', error);
+    
+    // Still attempt to log in to Discord so the bot can function
+    client.login(process.env.DISCORD_TOKEN);
+  });

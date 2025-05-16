@@ -13,7 +13,14 @@ for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
   const command = require(filePath);
   if ('data' in command && 'execute' in command) {
-    commands.push(command.data.toJSON());
+    // For SlashCommandBuilder objects with toJSON() method
+    if (typeof command.data.toJSON === 'function') {
+      commands.push(command.data.toJSON());
+    } 
+    // For plain objects like in the ask.js and leaderboard.js commands
+    else {
+      commands.push(command.data);
+    }
   } else {
     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
   }
@@ -34,7 +41,7 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
     );
     
     // Note: Global commands can take up to an hour to update across all guilds
-    // For faster development, you can use guild-specific commands by uncommenting the following code and adding DISCORD_GUILD_ID to your .env file:
+    // For faster development, you can use guild-specific commands if you know the guild ID:
     // Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
 
     console.log(`Successfully reloaded ${data.length} application (/) commands.`);
