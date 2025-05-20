@@ -1,0 +1,91 @@
+# wallet-info: Collab.Land Account Kit Integration for Discord
+@version 1.0
+@date 2025-05-20
+@purpose Implementation documentation for the Collab.Land Account Kit wallet retrieval and balance checking functionality.
+
+## IMPLEMENTATION CONTEXT
+- The Discord bot has been enhanced to retrieve and create Collab.Land smart accounts for users
+- Users can check their wallet balances on Base Sepolia testnet (Chain ID: 84532)
+- This functionality is essential for the token-incentivized quiz system
+- The Collab.Land Account Kit is currently in "friends and family" stage with specific auth requirements
+- The implementation uses a Telegram bot token for authentication as required by the current API
+
+## KEY FILES
+- `/src/account-kit/sdk.js`: Core integration with the Collab.Land Account Kit SDK
+- `/src/bot/commands/my-wallet.js`: The `/wallet-info` slash command implementation
+- `/src/bot/commands/wallet-test.js`: Simple test command to verify Account Kit connectivity
+
+## AUTHENTICATION
+The Account Kit SDK requires authentication which is currently handled through:
+- A Telegram bot token: `7388629689:AAEdwWJxXxevKoQ_GTFU9RqG6Qy-dXtyDuM`
+- This token is used as a parameter in API calls to authenticate with the Account Kit
+
+## ENVIRONMENT VARIABLES
+```
+COLLABLAND_ACCOUNTKIT_API_KEY=<api_key>
+COLLABLAND_ACCOUNT_KIT_ENVIRONMENT=QA  # or PROD
+COLLABLAND_CLIENT_ID=<client_id>
+COLLABLAND_CLIENT_SECRET=<client_secret>
+DISCORD_GUILD_ID=<guild_id>
+```
+
+## CORE FUNCTIONALITY
+
+### 1. Smart Account Retrieval
+The SDK first attempts to retrieve an existing smart account for a Discord user. If none exists, it creates a new one. The implementation includes:
+- Direct API calls with the Telegram bot token
+- Multiple fallback methods for retrieving/creating accounts
+- Error handling for common failure scenarios
+
+### 2. Token Balance Checking
+Once a smart account is retrieved, the system can check token balances by:
+- Connecting to the specified blockchain (default: Base Sepolia testnet, Chain ID 84532)
+- Using multiple RPC endpoints with fallback capabilities
+- Querying token contract information (balance, decimals, symbol)
+- Handling and diagnosing common blockchain interaction errors
+
+### 3. User Interface
+The `/wallet-info` command (renamed from `/my-wallet` to avoid Discord caching issues) provides:
+- A clean embedded UI showing the wallet address
+- Token balance information with appropriate formatting
+- Chain and token details
+- Error messages for common failure scenarios
+
+## DEFAULT TOKEN AND CHAIN
+The system is configured with the following defaults:
+- Token address: `0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1`
+- Chain ID: `84532` (Base Sepolia testnet)
+
+## RPC ENDPOINTS
+For Base Sepolia testnet (84532):
+- https://sepolia.base.org
+- https://base-sepolia-rpc.publicnode.com
+- https://base-sepolia.blockpi.network/v1/rpc/public
+
+The system includes robust fallback mechanisms to try each endpoint until a working connection is established.
+
+## ERROR HANDLING
+The implementation includes comprehensive error handling for:
+- Account Kit API connection issues
+- Smart account retrieval/creation failures
+- RPC connection problems
+- Token contract interaction errors
+- Balance checking failures
+
+## DEBUGGING
+Extensive debug logging has been added to trace:
+- API request parameters and responses
+- RPC connection attempts and failures
+- Token contract interactions
+- Balance calculation steps
+
+## NEXT DEVELOPMENT STEPS
+This implementation completes Phase 1 of the Account Kit integration. The next steps are:
+1. Integrate wallet checking into the `/ask` command
+2. Add balance validation before quiz creation
+3. Update the quiz preview UI to include funding information
+
+## KNOWN LIMITATIONS
+- The Account Kit API is in "friends and family" stage and may have limited availability
+- Token contract interactions depend on RPC endpoint reliability
+- Account creation currently has no user verification flow
