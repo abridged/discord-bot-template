@@ -3,25 +3,24 @@
  * Handles interaction with LLM API to generate quiz questions
  */
 
-const OpenAI = require('openai');
 const promptTemplates = require('./promptTemplates');
+const { generateCompletion } = require('./gaiaClient');
 
 // Constants for LLM configuration
-const defaultModel = process.env.LLM_MODEL || 'gpt-3.5-turbo';
-const defaultTemperature = parseFloat(process.env.LLM_TEMPERATURE || '0.7');
+// Using Gaia as the default model
+const defaultModel = process.env.GAIA_MODEL || 'Llama-3-8B-Instruct-262k-Q5_K_M';
+const defaultTemperature = parseFloat(process.env.GAIA_TEMPERATURE || '0.7');
 
 /**
- * Initialize OpenAI client
- * @returns {Object} OpenAI client instance
+ * Check Gaia API configuration
+ * @returns {void}
  */
-function initializeOpenAI() {
-  const apiKey = process.env.OPENAI_API_KEY || '';
+function checkGaiaConfig() {
+  const apiKey = process.env.GAIA_API_KEY || '';
   
   if (!apiKey) {
-    throw new Error('OpenAI API not configured. Set OPENAI_API_KEY in environment.');
+    throw new Error('Gaia API not configured. Set GAIA_API_KEY in environment.');
   }
-  
-  return new OpenAI({ apiKey });
 }
 
 /**
@@ -32,7 +31,7 @@ function initializeOpenAI() {
  */
 async function generateQuestionsFromContent(contentObj, options = {}) {
   try {
-    const openai = initializeOpenAI();
+    checkGaiaConfig();
     const { title, text } = contentObj;
     
     // For tests: special handling for very short content
@@ -54,15 +53,15 @@ async function generateQuestionsFromContent(contentObj, options = {}) {
       // For testing, we may use a simple string template
       prompt = promptTemplates.quizGeneration;
     }
-      
-    // Call OpenAI API with modern SDK
-    const completion = await openai.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      temperature,
-    });
     
-    const responseText = completion.choices[0].message.content;
+    console.log('Generating quiz with Gaia API...');
+    
+    // Call Gaia API for text completion
+    const responseText = await generateCompletion(prompt, {
+      maxTokens: 2000,
+      temperature,
+      model
+    });
     
     // Parse JSON response or extract questions
     try {

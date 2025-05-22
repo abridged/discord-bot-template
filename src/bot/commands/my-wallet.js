@@ -57,10 +57,13 @@ const CHAIN_INFO = {
     name: 'Base',
     rpcUrls: [
       'https://mainnet.base.org',
+      'https://base.meowrpc.com',
       'https://base.llamarpc.com',
       'https://base.publicnode.com',
       'https://1rpc.io/base',
-      'https://rpc.ankr.com/base'
+      'https://rpc.ankr.com/base',
+      'https://base.gateway.tenderly.co',
+      'https://base-mainnet.public.blastapi.io'
     ],
     explorer: 'https://basescan.org'
   },
@@ -84,6 +87,7 @@ const CHAIN_INFO = {
   84532: { // Base Sepolia testnet
     name: 'Base Sepolia (Testnet)',
     rpcUrls: [
+      'wss://base-sepolia-rpc.publicnode.com', // WebSocket endpoint first
       'https://sepolia.base.org',
       'https://base-sepolia-rpc.publicnode.com',
       'https://base-sepolia.blockpi.network/v1/rpc/public'
@@ -151,24 +155,49 @@ async function checkTokenBalance(walletAddress, tokenAddress, chainId) {
       numberOfEndpoints: chain.rpcUrls.length 
     });
     
-    for (const rpcUrl of chain.rpcUrls) {
+    // Function to attempt connection with timeout
+    async function tryProvider(rpcUrl, timeout = 5000) {
+      return new Promise(async (resolve, reject) => {
+        // Set timeout to abort if taking too long
+        const timeoutId = setTimeout(() => {
+          reject(new Error(`Connection timed out after ${timeout}ms`));
+        }, timeout);
+        
+        try {
+          logDebug('ATTEMPTING RPC CONNECTION', { rpcUrl, timeout });
+          
+          // Connect to provider with specific configuration
+          const tempProvider = new ethers.providers.JsonRpcProvider({
+            url: rpcUrl,
+            skipFetchSetup: false,
+            // Disable ENS name resolution which requires mainnet access
+            ensAddress: null,
+            // Add reasonable timeouts
+            timeout: timeout - 500, // Slightly shorter than our overall timeout
+          });
+          
+          // Test the provider with a simple call
+          const blockNumber = await tempProvider.getBlockNumber();
+          logDebug('RPC CONNECTION SUCCESS', { rpcUrl, blockNumber });
+          
+          // Clear the timeout since we succeeded
+          clearTimeout(timeoutId);
+          resolve(tempProvider);
+        } catch (error) {
+          clearTimeout(timeoutId);
+          reject(error);
+        }
+      });
+    }
+    
+    // Try each provider with increasing timeouts
+    for (let i = 0; i < chain.rpcUrls.length; i++) {
+      const rpcUrl = chain.rpcUrls[i];
+      // Increase timeout for later attempts
+      const timeout = 3000 + (i * 1000); 
+      
       try {
-        logDebug('ATTEMPTING RPC CONNECTION', { rpcUrl });
-        
-        // Connect to provider with specific network configuration to avoid ENS resolution
-        const tempProvider = new ethers.providers.JsonRpcProvider({
-          url: rpcUrl,
-          skipFetchSetup: false,
-          // Disable ENS name resolution which requires mainnet access
-          ensAddress: null
-        });
-        
-        // Test the provider with a simple call
-        const blockNumber = await tempProvider.getBlockNumber();
-        logDebug('RPC CONNECTION SUCCESS', { rpcUrl, blockNumber });
-        
-        // If we get here, the provider works
-        provider = tempProvider;
+        provider = await tryProvider(rpcUrl, timeout);
         break;
       } catch (providerError) {
         const errorInfo = {
@@ -293,7 +322,7 @@ async function checkTokenBalance(walletAddress, tokenAddress, chainId) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('wallet-info')
-    .setDescription('Look up your Collab.Land smart account and token balance')
+    .setDescription('Look up your smart account and token balance')
     .addStringOption(option => 
       option.setName('token')
         .setDescription('Token address to check balance for (or "native" for chain tokens)')
@@ -316,7 +345,7 @@ module.exports = {
       const tokenAddress = tokenOption || DEFAULT_TOKEN.address;
       const chainId = chainOption || DEFAULT_TOKEN.chainId;
       
-      await interaction.editReply('⏳ Retrieving your Collab.Land smart account...');
+      await interaction.editReply('⏳ Retrieving your smart account...');
       
       // Get or create the user's smart account
       const userId = interaction.user.id;
@@ -329,7 +358,7 @@ module.exports = {
       } catch (walletError) {
         console.error('Error retrieving/creating wallet:', walletError);
         return interaction.editReply({ 
-          content: `❌ There was an error with your Collab.Land smart account: ${walletError.message}\n\nPlease try again later or contact support if this persists.`, 
+          content: `❌ There was an error with your smart account: ${walletError.message}\n\nPlease try again later or contact support if this persists.`, 
           ephemeral: true 
         });
       }
@@ -347,12 +376,12 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor(0x0099FF)
         .setTitle('Your Wallet Information')
-        .setDescription(`Your Collab.Land wallet address is linked to your Discord account.`)
+        .setDescription(`Your smart wallet address is linked to your Discord account.`)
         .addFields(
           { name: 'Address', value: `\`${walletAddress}\`` }
         )
         .setTimestamp()
-        .setFooter({ text: 'Collab.Land Account Kit Integration' });
+        .setFooter({ text: 'Account Kit Integration' });
       
       // If we have a token address, check balance
       if (tokenAddress) {

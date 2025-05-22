@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -43,13 +43,49 @@ module.exports = {
         }
       }
       
+      // Check if this is a reward distribution button
+      if (interaction.customId.startsWith('distribute_rewards:')) {
+        try {
+          // Import the reward distribution handler
+          const { handleDistributeRewards } = require('../handlers/quiz-distribution-handler');
+          return await handleDistributeRewards(interaction);
+        } catch (error) {
+          console.error('Error in reward distribution button handler:', error);
+          try {
+            await interaction.reply({ content: `Error distributing rewards: ${error.message}`, ephemeral: true });
+          } catch (e) {
+            await interaction.followUp({ content: `Error distributing rewards: ${error.message}`, ephemeral: true });
+          }
+          return;
+        }
+      }
+      
       // Handle quiz approval/cancel buttons
       const { handleQuizApproval, handleQuizCancellation } = require('../commands/ask');
       
       // Quiz approval button - now using format "approve:userId:timestamp:quizCacheKey"
       if (interaction.customId.startsWith('approve:')) {
         try {
-          // Immediately defer the update to prevent interaction timeouts
+          // Immediately update the message to disable all buttons
+          const disabledRow = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId(interaction.customId)
+                .setLabel('Creating Quiz... Please Wait')
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true),
+              new ButtonBuilder()
+                .setCustomId('cancel:disabled')
+                .setLabel('Cancel')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true)
+            );
+
+          // Update the message with disabled buttons first
+          await interaction.update({ components: [disabledRow] })
+            .catch(e => console.error('Failed to update buttons:', e));
+          
+          // Then defer any further updates
           await interaction.deferUpdate().catch(e => console.error('Failed to defer update:', e));
           
           // Parse the custom ID to get the quiz cache key
@@ -116,7 +152,36 @@ module.exports = {
       
       // Quiz cancellation button - now using format "cancel:userId:timestamp"
       if (interaction.customId.startsWith('cancel:')) {
-        return await handleQuizCancellation(interaction);
+        try {
+          // Immediately update the message to disable all buttons
+          const disabledRow = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('approve:disabled')
+                .setLabel('Fund & Create Quiz')
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true),
+              new ButtonBuilder()
+                .setCustomId(interaction.customId)
+                .setLabel('Cancelling...')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true)
+            );
+
+          // Update the message with disabled buttons first
+          await interaction.update({ components: [disabledRow] })
+            .catch(e => console.error('Failed to update buttons:', e));
+          
+          return await handleQuizCancellation(interaction);
+        } catch (error) {
+          console.error('Error in quiz cancellation button handler:', error);
+          try {
+            await interaction.followUp({ content: `Error cancelling quiz: ${error.message}`, ephemeral: true });
+          } catch (e) {
+            console.error('Could not respond to interaction:', e);
+          }
+          return;
+        }
       }
     }
 
