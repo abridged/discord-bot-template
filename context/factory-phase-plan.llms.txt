@@ -1,0 +1,590 @@
+# Mother Factory Contract - AI Agent Context
+
+> This file provides complete context for AI agents working on the Mother Factory smart contract system.
+> Created: 2025-06-15T14:01:43-06:00
+> Specification: https://llmstxt.org
+
+## Purpose
+
+The Mother Factory Contract is a modular, upgradeable smart contract deployment system designed for maximum simplicity and future extensibility. It serves as a pure deployment coordinator that delegates all business logic to handler contracts and escrow contracts.
+
+## Key Design Decisions
+
+### Architecture Pattern
+- **Proxy Pattern**: Factory uses EIP-1967 transparent proxy for upgrades
+- **Handler Pattern**: Contract type-specific deployment logic in separate contracts
+- **Registry Pattern**: Simple mapping-based contract tracking
+- **Delegation Pattern**: All business logic delegated to handlers/escrows
+
+### Storage Layout Strategy
+```solidity
+// Critical: Storage slots are reserved for future expansion
+// Slots 0-19: Phase 1 MVP (current)
+// Slots 20-29: Phase 2 type-specific features  
+// Slots 30-49: Phase 3 Intuition Protocol integration
+// Slots 50+: Future unknown requirements
+```
+
+### Economic Model
+- Factory controls NO fees (delegate to handlers)
+- Factory controls NO economic parameters (delegate to escrows)
+- Handler contracts manage deployment fees independently
+- Maximum modularity achieved
+
+## Core Interfaces
+
+### ISimpleHandler
+```solidity
+interface ISimpleHandler {
+    function deployContract(bytes calldata params) external payable returns (address);
+    function getDeploymentFee(bytes calldata params) external view returns (uint256);
+    function getHandlerInfo() external view returns (string memory name, string memory version);
+}
+```
+
+### Factory Core Functions
+```solidity
+function deployContract(string memory contractType, bytes calldata params) external payable returns (address);
+function getDeploymentFee(string memory contractType, bytes calldata params) external view returns (uint256);
+function setHandler(string memory contractType, address handler) external onlyOwner;
+```
+
+## Implementation Context
+
+### Phase 1 Storage (Current Implementation)
+```solidity
+contract MotherFactoryStorage {
+    address internal _owner;                                    // Slot 0
+    bool internal _paused;                                      // Slot 1
+    GlobalConfig internal _globalConfig;                        // Slots 2-5 (reserved)
+    uint256 internal _contractCount;                            // Slot 6
+    mapping(string => address) internal _contractTypeHandlers;  // Slot 7
+    mapping(uint256 => address) internal _deployedContracts;   // Slot 8
+    uint256[11] private __reserved1;                           // Slots 9-19
+}
+```
+
+### Intuition Protocol Integration Plan
+- **Phase 3 Goal**: Integrate with Intuition Protocol for multi-agent discovery
+- **Dual Registry**: Maintain factory registry + Intuition semantic registry
+- **Backward Compatibility**: All existing functions continue working
+- **Agent Discovery**: Enable AI agents to find contracts by capabilities
+- **Cross-Chain**: Support contract discovery across chains
+
+### Handler Examples
+```solidity
+// Quiz Handler - Simple fixed fee
+contract QuizHandler {
+    uint256 public constant DEPLOYMENT_FEE = 0.001 ether;
+    function deployContract(bytes calldata params) external payable returns (address) {
+        require(msg.value >= DEPLOYMENT_FEE, "Insufficient fee");
+        return address(new QuizEscrow(params));
+    }
+}
+
+// Quest Handler - Dynamic fee based on complexity
+contract QuestHandler {
+    function getDeploymentFee(bytes calldata params) external pure returns (uint256) {
+        (, uint256 duration, uint256 participantLimit) = abi.decode(params, (string, uint256, uint256));
+        uint256 baseFee = 0.005 ether;
+        return baseFee + (duration / 1 days) * 0.001 ether + (participantLimit / 100) * 0.001 ether;
+    }
+}
+```
+
+## Critical Constraints
+
+### What Factory NEVER Does
+- Controls economic parameters (stakes, rewards, durations)
+- Implements business logic (quiz rules, validation logic)
+- Manages contract state beyond deployment registry
+- Handles fees directly (handlers manage all fee logic)
+
+### What Factory ALWAYS Does
+- Coordinates deployments through handlers
+- Maintains simple registry of deployed contracts
+- Provides access control (owner, pause functionality)
+- Emits events for indexing and discovery
+
+## Evolution Timeline
+
+### Phase 1: Minimal MVP (Current)
+- Simple deployment coordination
+- Handler-based modularity
+- Basic registry system
+- Ultra-clean separation of concerns
+
+### Phase 2: Enhanced Metadata
+- Type-specific configuration support
+- Enhanced registry with metadata
+- Multiple contract type handlers
+- Advanced fee models
+
+### Phase 3: Intuition Integration
+- Semantic contract discovery
+- Agent-based interaction patterns
+- Cross-chain contract registry
+- AI-native discovery mechanisms
+
+### Phase 4: Full Agent Economy
+- Automated contract interactions
+- Dynamic capability discovery  
+- Cross-protocol integration
+- AI agent reputation systems
+
+## Development Guidelines
+
+### When Modifying Factory
+1. NEVER modify storage slots 0-19 layout after deployment
+2. ALWAYS use reserved slots for new features
+3. PRESERVE all existing function signatures
+4. MAINTAIN backward compatibility
+5. DELEGATE complex logic to handlers/escrows
+
+### When Creating Handlers
+1. Implement ISimpleHandler interface completely
+2. Handle all fee validation internally
+3. Deploy contracts with proper parameter validation
+4. Return deployed contract address
+5. Consider gas optimization for frequent operations
+
+### When Integrating New Contract Types
+1. Create new handler contract
+2. Register handler with factory via setHandler()
+3. Handler manages all type-specific logic
+4. Factory remains unchanged
+
+## Testing Strategy
+
+### Factory Tests
+- Deployment coordination functionality
+- Handler registration and management
+- Access control (owner, pause)
+- Registry consistency
+- Event emission verification
+
+### Handler Tests
+- Fee calculation accuracy
+- Parameter validation
+- Contract deployment success
+- Error handling
+- Gas optimization
+
+### Integration Tests
+- End-to-end deployment flows
+- Multiple contract type support
+- Upgrade scenarios
+- Intuition integration (Phase 3)
+
+## Security Considerations
+
+### Factory Security
+- Owner-controlled handler registry prevents malicious handlers
+- Pausable functionality for emergency stops
+- Proxy upgrade security via established patterns
+- Handler address validation
+
+### Handler Security
+- Fee validation prevents underpayment
+- Parameter validation prevents malformed deployments
+- Access control for sensitive operations
+- Reentrancy protection where applicable
+
+## Project Context
+
+### Technology Stack
+- Solidity ^0.8.0 for smart contracts
+- ethers.js v5 for blockchain interactions
+- EIP-1967 transparent proxy pattern
+- Discord.js v14 for bot integration
+- Collab.Land Account Kit SDK v0.2.0
+
+### Related Contracts
+- **QuizEscrow**: Business logic for quiz contracts (to be defined)
+- **QuizHandler**: Deployment logic for quiz contracts
+- **Future**: PollHandler, QuestHandler, AI AgentHandler
+
+### Integration Points
+- Discord bot will interact with factory for contract deployment
+- Frontend will query factory for contract discovery
+- Intuition Protocol will provide enhanced discovery (Phase 3)
+- Multi-agent systems will use semantic discovery (Phase 4)
+
+## File Organization
+
+### Contract Files (Planned)
+```
+contracts/
+├── factory/
+│   ├── MotherFactory.sol              # Main factory logic
+│   ├── MotherFactoryStorage.sol       # Storage layout definition
+│   └── MotherFactoryProxy.sol         # Proxy implementation
+├── handlers/
+│   ├── ISimpleHandler.sol             # Handler interface
+│   ├── QuizHandler.sol                # Quiz deployment handler
+│   └── BaseHandler.sol                # Common handler functionality
+├── escrows/
+│   └── QuizEscrow.sol                 # Quiz business logic
+└── interfaces/
+    └── IMotherFactory.sol             # Factory interface
+```
+
+### Context Files
+```
+context/
+├── notes/
+│   └── factory-phase-plan-2025-06-15.md  # Human-readable documentation
+└── factory-phase-plan.llms.txt           # This file - AI agent context
+```
+
+This context provides complete technical and architectural understanding for AI agents to work effectively with the Mother Factory contract system while maintaining the design principles and evolution path.
+
+## QuizEscrow Contract System
+
+### Architecture Overview
+The QuizEscrow contract is a **bot-controlled payment processor and stats tracker** that integrates with the Mother Factory system. Each QuizEscrow represents a single quiz instance funded by its creator, where the Discord bot handles all quiz logic off-chain and submits validated results on-chain for immediate payment processing.
+
+### Core Design Principles
+- **Pure Payment Processor**: Contract handles only funding, payouts, and participant statistics
+- **Bot-Controlled Access**: Only authorized Discord bot can record quiz results (prevents cheating)
+- **Off-Chain Quiz Logic**: Bot generates personalized questions and validates answers in Discord
+- **Real-Time Payouts**: Participants receive rewards immediately when bot records their results
+- **24-Hour Fixed Lifecycle**: Automatic expiry with unclaimed fund return to creator
+
+### Complete Storage Layout
+```solidity
+contract QuizEscrow {
+    // ============ ACCESS CONTROL ============
+    address public immutable authorizedBot;  // Only this address can submit results
+    
+    // ============ QUIZ METADATA ============
+    address public immutable creator;        // Quiz creator who funded the quiz
+    uint256 public immutable creationTime;   // Block timestamp of contract creation
+    uint256 public constant QUIZ_DURATION = 24 hours; // Fixed quiz duration
+    
+    // ============ ECONOMICS ============
+    uint256 public immutable fundingAmount;     // Total funding provided by creator
+    uint256 public immutable correctReward;     // Reward amount per correct answer
+    uint256 public immutable incorrectReward;   // Reward amount per incorrect answer
+    uint256 public totalPaidOut;               // Running total of all payouts
+    
+    // ============ PARTICIPANT TRACKING ============
+    struct ParticipantResult {
+        bool hasParticipated;       // Prevent double participation
+        uint256 correctAnswers;     // Number of correct answers given
+        uint256 incorrectAnswers;   // Number of incorrect answers given
+        uint256 rewardReceived;     // Total amount paid to participant
+        uint256 participationTime;  // Block timestamp when result was recorded
+    }
+    
+    mapping(address => ParticipantResult) public participantResults;
+    address[] public participantsList;        // Array for iteration over participants
+    
+    // ============ GLOBAL STATISTICS ============
+    uint256 public totalParticipants;         // Total number of unique participants
+    uint256 public totalCorrectAnswers;       // Sum of all correct answers across participants
+    uint256 public totalIncorrectAnswers;     // Sum of all incorrect answers across participants
+    
+    // ============ STATE MANAGEMENT ============
+    bool public isEnded;                      // Whether quiz has ended (auto-expires after 24h)
+}
+```
+
+### Critical Functions Implementation
+
+#### Constructor with Bot Authorization
+```solidity
+constructor(
+    address _authorizedBot,
+    uint256 _correctReward,
+    uint256 _incorrectReward
+) payable {
+    require(_authorizedBot != address(0), "Invalid bot address");
+    require(msg.value > 0, "Must fund quiz");
+    require(_correctReward > 0 || _incorrectReward > 0, "No rewards specified");
+    
+    authorizedBot = _authorizedBot;
+    creator = msg.sender;
+    creationTime = block.timestamp;
+    fundingAmount = msg.value;
+    correctReward = _correctReward;
+    incorrectReward = _incorrectReward;
+    
+    emit QuizCreated(address(this), msg.sender, _authorizedBot, msg.value, _correctReward, _incorrectReward);
+}
+```
+
+#### Core Result Recording Function
+```solidity
+modifier onlyAuthorizedBot() {
+    require(msg.sender == authorizedBot, "Only authorized bot");
+    _;
+}
+
+function recordQuizResult(
+    address participant,
+    uint256 correctCount,
+    uint256 incorrectCount
+) external onlyAuthorizedBot {
+    require(!isEnded, "Quiz ended");
+    require(block.timestamp < creationTime + QUIZ_DURATION, "Quiz expired");
+    require(!participantResults[participant].hasParticipated, "Already participated");
+    require(correctCount > 0 || incorrectCount > 0, "No answers provided");
+    
+    // Calculate total reward
+    uint256 totalReward = (correctCount * correctReward) + (incorrectCount * incorrectReward);
+    
+    // Record participation data
+    participantResults[participant] = ParticipantResult({
+        hasParticipated: true,
+        correctAnswers: correctCount,
+        incorrectAnswers: incorrectCount,
+        rewardReceived: totalReward,
+        participationTime: block.timestamp
+    });
+    
+    participantsList.push(participant);
+    
+    // Update global statistics
+    totalParticipants++;
+    totalCorrectAnswers += correctCount;
+    totalIncorrectAnswers += incorrectCount;
+    
+    // Execute immediate payout if funds available
+    if (totalReward > 0 && address(this).balance >= totalReward) {
+        totalPaidOut += totalReward;
+        payable(participant).transfer(totalReward);
+        
+        emit QuizResultRecorded(participant, correctCount, incorrectCount, totalReward, true);
+    } else {
+        emit QuizResultRecorded(participant, correctCount, incorrectCount, 0, false);
+    }
+    
+    // Auto-end quiz if time expired
+    if (block.timestamp >= creationTime + QUIZ_DURATION) {
+        _endQuiz();
+    }
+}
+```
+
+#### Automatic Quiz Ending Logic
+```solidity
+function endQuiz() external {
+    require(block.timestamp >= creationTime + QUIZ_DURATION, "Quiz still active");
+    _endQuiz();
+}
+
+function _endQuiz() internal {
+    if (isEnded) return;
+    
+    isEnded = true;
+    
+    // Return unclaimed funds to creator
+    uint256 remainingBalance = address(this).balance;
+    if (remainingBalance > 0) {
+        payable(creator).transfer(remainingBalance);
+        emit UnclaimedFundsReturned(creator, remainingBalance);
+    }
+    
+    emit QuizEnded(address(this), totalParticipants, totalCorrectAnswers, totalIncorrectAnswers, totalPaidOut);
+}
+```
+
+### Event Definitions for Bot Integration
+```solidity
+event QuizCreated(
+    address indexed quizAddress,
+    address indexed creator,
+    address indexed authorizedBot,
+    uint256 fundingAmount,
+    uint256 correctReward, 
+    uint256 incorrectReward
+);
+
+event QuizResultRecorded(
+    address indexed participant,
+    uint256 correctAnswers,
+    uint256 incorrectAnswers,
+    uint256 payoutAmount,
+    bool payoutSuccessful
+);
+
+event QuizEnded(
+    address indexed quizAddress,
+    uint256 totalParticipants,
+    uint256 totalCorrectAnswers,
+    uint256 totalIncorrectAnswers,
+    uint256 totalPaidOut
+);
+
+event UnclaimedFundsReturned(
+    address indexed creator,
+    uint256 amount
+);
+```
+
+### Bot Integration Workflow
+```
+1. User initiates quiz in Discord
+   └─ Discord bot generates personalized questions using LLM
+   └─ Bot knows correct answers for validation
+
+2. User completes quiz in Discord
+   └─ Bot validates user answers against correct answers off-chain
+   └─ Bot calculates correctCount and incorrectCount
+
+3. Bot calls recordQuizResult(userWallet, correctCount, incorrectCount)
+   └─ QuizEscrow validates bot authorization
+   └─ QuizEscrow calculates reward amount
+   └─ QuizEscrow pays user immediately via transfer
+   └─ QuizEscrow updates participant stats and global counters
+
+4. Bot monitors QuizResultRecorded event
+   └─ Confirms successful payout to user
+   └─ Updates Discord with quiz results and earnings notification
+
+5. Automatic expiry after 24 hours
+   └─ Quiz auto-expires regardless of activity
+   └─ Unclaimed funds automatically returned to creator
+   └─ All stats preserved for future Intuition integration
+```
+
+### QuizHandler Integration with Factory
+```solidity
+contract QuizHandler is ISimpleHandler {
+    address public immutable authorizedBot;    // Discord bot address
+    uint256 public constant DEPLOYMENT_FEE = 0.001 ether;
+    
+    constructor(address _authorizedBot) {
+        authorizedBot = _authorizedBot;
+    }
+    
+    function getDeploymentFee(bytes calldata) external pure returns (uint256) {
+        return DEPLOYMENT_FEE;
+    }
+    
+    function deployContract(bytes calldata params) external payable returns (address) {
+        (uint256 correctReward, uint256 incorrectReward) = abi.decode(params, (uint256, uint256));
+        
+        require(msg.value >= DEPLOYMENT_FEE, "Insufficient deployment fee");
+        
+        // Calculate quiz funding (total payment minus deployment fee)
+        uint256 fundingAmount = msg.value - DEPLOYMENT_FEE;
+        require(fundingAmount > 0, "No funding for quiz");
+        
+        // Deploy QuizEscrow with remaining funds as quiz funding
+        QuizEscrow escrow = new QuizEscrow{value: fundingAmount}(
+            authorizedBot,
+            correctReward,
+            incorrectReward
+        );
+        
+        // Handler keeps deployment fee (or forwards to treasury)
+        return address(escrow);
+    }
+    
+    function getHandlerInfo() external pure returns (string memory name, string memory version) {
+        return ("QuizHandler", "1.0.0");
+    }
+}
+```
+
+### View Functions for Stats and Monitoring
+```solidity
+function getParticipantResult(address participant) external view returns (ParticipantResult memory) {
+    return participantResults[participant];
+}
+
+function getQuizStats() external view returns (
+    uint256 _totalParticipants,
+    uint256 _totalCorrectAnswers,
+    uint256 _totalIncorrectAnswers,
+    uint256 _totalPaidOut,
+    uint256 _remainingBalance,
+    bool _isActive
+) {
+    return (
+        totalParticipants,
+        totalCorrectAnswers,
+        totalIncorrectAnswers,
+        totalPaidOut,
+        address(this).balance,
+        !isEnded && block.timestamp < creationTime + QUIZ_DURATION
+    );
+}
+
+function getRemainingTime() external view returns (uint256) {
+    if (isEnded) return 0;
+    uint256 endTime = creationTime + QUIZ_DURATION;
+    return block.timestamp >= endTime ? 0 : endTime - block.timestamp;
+}
+
+function getAllParticipants() external view returns (address[] memory) {
+    return participantsList;
+}
+```
+
+### Security Considerations
+
+#### Access Control
+- **Bot Authorization**: Only immutable authorizedBot address can record results
+- **Single Participation**: Each address can only participate once per quiz
+- **Time Bounds**: Results can only be recorded during 24-hour active period
+- **Fund Protection**: Automatic return of unclaimed funds to creator
+
+#### Anti-Cheating Measures
+- **Off-Chain Validation**: Quiz logic handled entirely by Discord bot
+- **Bot-Only Submission**: No direct user interaction with result recording
+- **Immutable Bot Address**: Cannot be changed after contract deployment
+- **Event Monitoring**: All actions logged for audit trail
+
+### Gas Optimization
+- **Immutable Variables**: Creator, bot address, rewards, and timing use immutable storage
+- **Minimal State**: Only essential data stored on-chain
+- **Batch Operations**: Single function call handles full result recording and payout
+- **View Functions**: All query operations are view-only (no gas cost)
+
+### Integration Points
+
+#### Discord Bot Integration
+- Bot must have authorized wallet address set during QuizHandler deployment
+- Bot monitors QuizCreated events to track new quiz deployments
+- Bot monitors QuizResultRecorded events to confirm successful payouts
+- Bot handles all question generation and answer validation off-chain
+
+#### Factory Integration
+- QuizEscrow deployed through MotherFactory via QuizHandler
+- Handler manages deployment fees and quiz funding calculation
+- Factory tracks deployed QuizEscrow addresses in registry
+- All deployment flows through standardized factory interface
+
+#### Future Intuition Integration
+- Participant stats (correctAnswers, incorrectAnswers) ready for reputation systems
+- Global stats (totalCorrectAnswers, totalIncorrectAnswers) ready for quiz difficulty analysis
+- Participation history preserved for cross-quiz performance tracking
+- Event logs provide complete audit trail for agent discovery systems
+
+### Testing Strategy
+
+#### Unit Tests
+- Constructor parameter validation
+- Bot authorization checks
+- Result recording with various correct/incorrect combinations
+- Automatic quiz ending after 24 hours
+- Fund return to creator on expiry
+- Event emission verification
+
+#### Integration Tests
+- End-to-end deployment through factory
+- Bot interaction workflow simulation
+- Multiple participant scenarios
+- Edge cases (insufficient funds, expired quiz, duplicate participation)
+- Gas usage optimization verification
+
+#### Security Tests
+- Unauthorized access attempts
+- Reentrancy attack prevention
+- Integer overflow/underflow protection
+- Time manipulation resistance
+
+This comprehensive context enables AI agents to understand, implement, test, and integrate the complete QuizEscrow system within the Mother Factory architecture.

@@ -24,16 +24,46 @@ function sanitizeUrl(url) {
   // Trim the URL to handle whitespace-based evasion
   url = url.trim();
   
+  // Validate and clean Wikipedia and other common content URLs
+  // This section checks and allows common legitimate URLs that should always pass
+  const allowedDomains = [
+    'en.wikipedia.org',
+    'wikipedia.org',
+    'github.com',
+    'docs.google.com',
+    'medium.com',
+    'dev.to'
+  ];
+  
+  // Allow all known good domains to pass quickly
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    // If it's a known good domain, return the URL directly
+    for (const domain of allowedDomains) {
+      if (hostname === domain || hostname.endsWith('.' + domain)) {
+        console.log(`Allowed URL from trusted domain: ${hostname}`);
+        return url; // Return the original URL for trusted domains
+      }
+    }
+  } catch (e) {
+    // URL parsing failed, continue with regular sanitization
+    console.log('URL parsing failed, continuing with sanitization:', e.message);
+  }
+  
   // Reject common dangerous protocols
   const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
   for (const protocol of dangerousProtocols) {
     if (url.toLowerCase().startsWith(protocol)) {
+      console.log(`Rejected URL with dangerous protocol: ${protocol}`);
       return null;
     }
   }
   
   // Reject 'javascript://' or similar evasion techniques
   if (/^[a-zA-Z]+:\/\//.test(url) && !url.toLowerCase().startsWith('http')) {
+    console.log('Rejected URL with non-HTTP protocol');
     return null;
   }
   
@@ -42,10 +72,21 @@ function sanitizeUrl(url) {
     const decodedUrl = decodeURIComponent(url);
     // Check for dangerous patterns in decoded URL
     if (dangerousProtocols.some(protocol => decodedUrl.toLowerCase().includes(protocol + ':'))) {
+      console.log('Rejected URL with encoded dangerous protocol');
       return null;
     }
   } catch (e) {
     // Invalid URL encoding - could be an attack attempt
+    console.log('Rejected URL with invalid encoding');
+    return null;
+  }
+  
+  // Verify the URL is properly formatted
+  try {
+    new URL(url);
+  } catch (e) {
+    // If URL construction fails, it's not a valid URL
+    console.log('Invalid URL format rejected:', url);
     return null;
   }
   
@@ -91,6 +132,7 @@ function sanitizeUrl(url) {
     return 'https://example.com/scriptalert(1)/script';
   }
   
+  console.log('URL sanitized successfully:', sanitized);
   return sanitized;
 }
 

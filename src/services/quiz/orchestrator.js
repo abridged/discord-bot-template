@@ -50,7 +50,24 @@ async function createQuizFromUrl(url, options = {}) {
     const quiz = {
       sourceUrl: url,
       sourceTitle: contentObj.title,
-      questions: finalQuestions,
+      title: contentObj.title || 'Quiz from URL',
+      description: `Quiz generated from: ${url}`,
+      questions: finalQuestions.map(q => {
+        // Standardize question format for database schema compatibility
+        return {
+          // The database expects 'questionText' field, not 'question' or 'text'
+          questionText: q.question || q.text || 'No question provided',
+          // Keep these fields for compatibility with other parts of the system
+          question: q.question || q.text || 'No question provided',
+          text: q.question || q.text || 'No question provided',
+          options: Array.isArray(q.options) ? q.options : 
+                   (typeof q.options === 'object' && q.options !== null) ? 
+                   Object.values(q.options) : ['Option A', 'Option B', 'Option C'],
+          correctOptionIndex: q.correctOptionIndex !== undefined ? 
+                             Number(q.correctOptionIndex) : 0,
+          order: 0 // Will be set in sequence later
+        };
+      }),
       metadata: {
         generationDate: new Date().toISOString(),
         validationMetrics: validationResult.metrics,

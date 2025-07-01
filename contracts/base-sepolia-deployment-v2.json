@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-06-23T20:58:18.217Z",
+  "network": "baseSepolia",
+  "version": "v2",
+  "deploymentWallet": "0x669ae74656b538c9a96205f8f4073d258eb4c85f",
+  "discordBotWallet": "0xDa04681DF85A8231b967E6cDeFC332fcabeEB0ee",
+  "contracts": {
+    "proxyAdmin": "0xe36d7889b107723505E687eFEc24e3AE505021f6",
+    "motherFactoryLogic": "0x515a4b31F863c06c4AD397022ec5832Ba50184Db",
+    "motherFactory": "0xFC94d8b4CB7a73Cd4E6b3dE152df26066f6Ae9E0",
+    "quizHandlerLogic": "0x232Df86809E7e5372DF1fCFdE4F6d36889A1d8f0",
+    "quizHandler": "0xb9cb3C68a561F5EFC12FBc610aaED1df2672d903"
+  },
+  "gasUsed": {
+    "proxyAdmin": "310479",
+    "motherFactoryLogic": "1755208",
+    "motherFactoryProxy": "735703",
+    "quizHandlerLogic": "1652579",
+    "quizHandlerProxy": "711327",
+    "registration": "122299",
+    "total": "5287595"
+  },
+  "features": [
+    "Bot-only deployment restriction",
+    "Correct Discord bot authorization",
+    "Upgradeable proxy architecture"
+  ],
+  "costInEth": "0.005287601383072582"
+}

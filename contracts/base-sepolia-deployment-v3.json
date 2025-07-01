@@ -1,0 +1,31 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "version": "v3",
+  "deploymentType": "simple",
+  "timestamp": "2025-06-24T22:11:11.222Z",
+  "deployerAddress": "0x669ae74656B538c9a96205f8f4073d258EB4C85F",
+  "discordBotAddress": "0xDa04681DF85A8231b967E6cDeFC332fcabeEB0ee",
+  "contracts": {
+    "MotherFactory": {
+      "address": "0x85ef58b83366381122d341Dbc9B6689236060aa0",
+      "deploymentTxHash": "0xfafe807f57dc9d5dacc6b45baf4a12a5ea38a3349bb880e406c76ff6e7faa560"
+    },
+    "QuizHandler": {
+      "address": "0xb206c33FE922f5914534970e2c7625A343804CC3",
+      "deploymentTxHash": "0x580b6ffbeca827a914aede39c2859b3c532483c6984f4a4fff697d4d12522cca"
+    }
+  },
+  "features": {
+    "userDirectDeploy": true,
+    "botOnlyRestriction": false,
+    "upgradeableProxies": false
+  },
+  "notes": [
+    "v3 enables user direct deployment of QuizEscrow contracts",
+    "Removed onlyAuthorizedBot restriction from deployContract()",
+    "Bot address still used for QuizHandler result recording authorization",
+    "Single-transaction user experience for deploy + fund",
+    "Simple deployment (non-upgradeable) to avoid ethers v6 conflicts"
+  ]
+}

@@ -4,11 +4,18 @@
  * Tests for security vulnerabilities and edge cases in the quiz generation process
  */
 
-// Mock the content fetcher module
+// Set up mocking for quizGenerator mockFetchContent function
 const mockFetch = jest.fn();
-jest.mock('../../quiz/contentFetcher', () => ({
-  fetchContent: (url) => mockFetch(url)
-}));
+const actualQuizGenerator = jest.requireActual('../../quiz/quizGenerator');
+
+// Create a version of quizGenerator with mocked mockFetchContent
+const mockQuizGeneratorModule = {
+  ...actualQuizGenerator,
+  mockFetchContent: mockFetch
+};
+
+// Mock the quizGenerator module to inject our mock fetch function
+jest.mock('../../quiz/quizGenerator', () => mockQuizGeneratorModule);
 
 // Import the module to test
 const { 

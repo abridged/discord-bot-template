@@ -39,14 +39,14 @@ ${detailedInstructions}
 
 For each question:
 1. Create clear, concise, and engaging questions that have a friendly tone with a bit of flair to make them entertaining
-2. Provide exactly 3 SPECIFIC and DETAILED answer options that are meaningful and informative
-3. DO NOT use generic placeholders like "Option A" or "Option B" - each option must be a complete, meaningful answer
-4. Identify which option is correct (as an index number)
-5. Make sure options are distinct from each other and factually accurate based on the source content
-6. Provide concrete, specific answer choices with actual content (e.g., "A chronological record of transactions" NOT "Option A")
-7. Ensure questions and answers are contextually relevant to the source content and demonstrate understanding of the material
-8. Keep questions and answers concise, approachable, and fun when appropriate
-9. The final options presented will include these 3 plus "All of the above" and "None of the above", so ensure your options work with these additions
+2. Provide EXACTLY 3 specific answer options that are meaningful and informative - NO MORE, NO LESS
+3. EXTREMELY IMPORTANT: Each answer option MUST be less than 80 characters in length to fit within Discord UI buttons
+4. Keep all answer options SHORT and CONCISE - ideally 40-60 characters maximum
+5. DO NOT use generic placeholders like "Option A" or "Option B" - each option must be a complete, meaningful answer
+6. Identify which option is correct (as an index number, either 0, 1, or 2)
+7. Make sure options are distinct from each other and factually accurate based on the source content
+8. DO NOT include "All of the above" or "None of the above" as options - only create 3 unique, specific answer choices
+9. Use short, clear phrases rather than complete sentences for answer options when possible
 10. Avoid overly technical jargon unless the source content requires it
 11. Write questions that test comprehension and critical thinking, not just memorization
 12. Do not refer to specific line numbers or page numbers
@@ -87,6 +87,10 @@ For each question:
 2. Verify that the correct answer is actually correct
 3. Verify that wrong answers are actually wrong
 4. Check if questions are distinct from each other
+5. CRITICALLY IMPORTANT: Verify that all answer options are under 80 characters in length (required for Discord UI)
+6. If any answer option is too long, either reject the question or provide a shortened version of the answer
+7. Confirm there are EXACTLY 3 answer options per question - no more, no less
+8. Verify that no options include "All of the above" or "None of the above" phrases
 
 Output your validation as JSON:
 {

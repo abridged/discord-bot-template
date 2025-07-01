@@ -1,0 +1,126 @@
+Project: Discord Bot Template - Account Kit Integration
+Date: May 19, 2025
+Status: Design and planning completed, implementation pending
+Branch: simple-quiz-db-scaffolding
+
+# Overview
+We are integrating the Collab.Land Account Kit SDK (@collabland/accountkit-sdk) into our Discord bot template project to enable token-based quiz funding and reward distribution. This integration will allow users to create quizzes funded with cryptocurrency tokens and automatically distribute rewards to participants based on their quiz performance.
+
+# Current Progress
+1. Installed SDK package: `npm install @collabland/accountkit-sdk`
+2. Updated `src/account-kit/sdk.js` to integrate real SDK while maintaining backward compatibility 
+3. Updated environment configuration in `.env.example` to include Account Kit requirements
+4. Created step-by-step implementation plan in `context/notes/2025-05-19-account-kit-integration.md`
+5. Currently in planning phase - no functionality implemented yet beyond SDK integration
+
+# Architecture Design
+## High-Level Flow
+```
+User initiates quiz with /ask -> Account Kit checks user's smart account balance -> 
+If sufficient balance: Show quiz preview -> User approves quiz -> Funds automatically transferred -> 
+Quiz created & participants join -> Quiz completes -> Tokens distributed to participants
+```
+
+## Key Components
+1. **User Smart Account Discovery**
+   - Uses Account Kit SDK to find the user's wallet address via Discord ID
+   - Checks token balance to ensure sufficient funds for quiz creation
+   - Handles errors gracefully when account is not found or has insufficient funds
+
+2. **Quiz Funding Flow**
+   - Integrates fund transfer into quiz approval process
+   - No separate funding command - approval automatically transfers funds
+   - Requires clear communication about funds being transferred during approval
+
+3. **Quiz Escrow Account**
+   - Each quiz gets a dedicated escrow account
+   - Funds are held until quiz expiry
+   - Rewards are distributed based on participant performance (75% to correct answers, 25% to incorrect)
+
+## Database Extensions
+- Added fields to store smart account addresses, transaction hashes, and funding status
+- Quiz statuses: unfunded, funding in progress, funded, distribution in progress, completed
+
+# Implementation Details
+## SDK Integration
+The SDK is initialized with the following pattern:
+```javascript
+const { AccountKitClient } = require('@collabland/accountkit-sdk');
+
+function getAccountKitClient() {
+  const apiKey = process.env.COLLABLAND_API_KEY;
+  const apiUrl = process.env.COLLABLAND_API_URL || 'https://api.collab.land';
+  
+  return new AccountKitClient({
+    apiKey,  // Will be automatically added as x-api-key header by the SDK
+    baseURL: apiUrl,
+  });
+}
+```
+
+## Important Notes from Collab.Land Team
+1. For authentication, only the API key is needed (x-api-key header)
+2. We can ignore AE tokens or OAuth flows mentioned in the auto-generated docs
+3. The SDK README provides the most accurate integration information
+4. Account Kit is still in "friends and family" stage - expect some rough edges
+5. We should skip delegations functionality for now
+
+## Critical SDK Functions
+1. `getUserWallet(userId)` - Get user's wallet address from Discord ID
+2. `sendTokens(params)` - Send tokens from one account to another
+3. `batchSendTokens(transactions)` - Send tokens to multiple users in one operation
+4. `getTransaction(txId)` - Check transaction status
+
+# Environment Variables
+Required for integration:
+```
+COLLABLAND_API_KEY=your_collabland_api_key
+COLLABLAND_API_URL=https://api.collab.land
+```
+
+# Implementation Phases
+Implementation will follow the phased approach detailed in `context/notes/2025-05-19-account-kit-integration.md`:
+1. User Smart Account Discovery (Days 1-2)
+2. Quiz Creation Pre-validation (Days 3-4)
+3. Escrow Account & Transaction (Days 5-7)
+4. Quiz Lifecycle Integration (Days 8-10)
+5. Complete Quiz Lifecycle (Days 11-14)
+
+Each phase includes verification commands that can be tested in Discord before proceeding.
+
+# Common Errors & Troubleshooting
+1. "COLLABLAND_API_KEY not found" - Check .env file has proper API key
+2. "Failed to retrieve wallet information" - User likely doesn't have a Collab.Land wallet
+3. Transaction failures - Check gas prices and network congestion
+4. Missing wallet address - Ensure proper Discord ID mapping
+
+# Code References
+## Main Integration Files
+- `src/account-kit/sdk.js` - Core SDK wrapper with mock fallbacks
+- `src/account-kit/smartAccountManager.js` - To be created for quiz-specific functionality
+- `src/bot/commands/my-wallet.js` - To be created for wallet discovery commands
+- `src/bot/commands/ask.js` - To be updated for balance checking and funding
+
+## Existing Files for Reference
+- `src/account-kit/walletManagement.js` - Contains logic for existing wallet functionality
+- `src/quiz/quizGenerator.js` - Core quiz generation logic
+- `src/orchestration.js` - Main orchestration logic for quiz lifecycle
+
+# Testing Strategy
+1. Create test wallets specifically for development
+2. Use Account Kit's test environment during development
+3. Implement manual test commands for each functional component
+4. Document expected behavior for both success and error cases
+
+# Security Considerations
+1. Never expose API keys or wallet private keys in code or logs
+2. Validate all transaction parameters before execution
+3. Implement transaction limits to prevent excessive transfers
+4. Log all transaction attempts for audit purposes
+5. Ensure only quiz creator can approve fund transfers
+
+# Next Steps
+1. Set up test wallets and environment for development
+2. Begin implementing Phase 1 (User Smart Account Discovery)
+3. Create verification commands to test functionality in Discord
+4. Document all API interactions for further refinement

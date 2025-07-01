@@ -34,15 +34,12 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
   try {
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-    // The put method is used to fully refresh all commands globally with the current set
-    const data = await rest.put(
+    // Deploy global commands for maximum compatibility
+    console.log('Deploying global commands (may take up to an hour to update)');
+    let data = await rest.put(
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
       { body: commands },
     );
-    
-    // Note: Global commands can take up to an hour to update across all guilds
-    // For faster development, you can use guild-specific commands if you know the guild ID:
-    // Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
 
     console.log(`Successfully reloaded ${data.length} application (/) commands.`);
   } catch (error) {

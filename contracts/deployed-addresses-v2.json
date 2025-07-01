@@ -1,0 +1,12 @@
+{
+  "version": "v2",
+  "network": "baseSepolia",
+  "motherFactory": "0xFC94d8b4CB7a73Cd4E6b3dE152df26066f6Ae9E0",
+  "quizHandler": "0xb9cb3C68a561F5EFC12FBc610aaED1df2672d903",
+  "discordBot": "0xDa04681DF85A8231b967E6cDeFC332fcabeEB0ee",
+  "deploymentWallet": "0x669ae74656b538c9a96205f8f4073d258eb4c85f",
+  "features": {
+    "botOnlyDeployment": true,
+    "upgradeableProxies": true
+  }
+}

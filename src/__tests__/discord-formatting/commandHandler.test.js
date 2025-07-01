@@ -57,19 +57,30 @@ jest.mock('discord.js', () => {
   };
 
   return {
-    SlashCommandBuilder: jest.fn().mockImplementation(() => ({
-      setName: jest.fn().mockReturnThis(),
-      setDescription: jest.fn().mockReturnThis(),
-      addStringOption: jest.fn().mockImplementation(fn => {
-        fn({
-          setName: jest.fn().mockReturnThis(),
-          setDescription: jest.fn().mockReturnThis(),
-          setRequired: jest.fn().mockReturnThis()
-        });
-        return this;
-      }),
-      toJSON: jest.fn().mockReturnValue({})
-    })),
+    SlashCommandBuilder: jest.fn().mockImplementation(() => {
+      const builder = {
+        setName: jest.fn().mockReturnThis(),
+        setDescription: jest.fn().mockReturnThis(),
+        addStringOption: jest.fn().mockImplementation(fn => {
+          fn({
+            setName: jest.fn().mockReturnThis(),
+            setDescription: jest.fn().mockReturnThis(),
+            setRequired: jest.fn().mockReturnThis()
+          });
+          return builder;
+        }),
+        addIntegerOption: jest.fn().mockImplementation(fn => {
+          fn({
+            setName: jest.fn().mockReturnThis(),
+            setDescription: jest.fn().mockReturnThis(),
+            setRequired: jest.fn().mockReturnThis()
+          });
+          return builder;
+        }),
+        toJSON: jest.fn().mockReturnValue({})
+      };
+      return builder;
+    }),
     ActionRowBuilder: jest.fn().mockImplementation(createActionRowBuilder),
     ButtonBuilder: jest.fn().mockImplementation(createButtonBuilder),
     ButtonStyle: {

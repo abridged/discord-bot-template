@@ -1,0 +1,33 @@
+{
+  "networks": {
+    "hardhat": {
+      "chainId": 31337,
+      "contracts": {
+        "motherFactory": null,
+        "quizHandler": null,
+        "proxyAdmin": null
+      },
+      "lastDeployment": null
+    },
+    "baseSepolia": {
+      "chainId": 84532,
+      "contracts": {
+        "motherFactory": "0xb5422FBA026113bfB41f8cf3d9dd140FCDccC266",
+        "quizHandler": "0x0F626f912BB4a38e3b48a6B6560E2E4A75a25b88",
+        "proxyAdmin": "0x8817Cf1BeEE23f6Da334194C5FBFEd8051a12271",
+        "motherFactoryLogic": "0x58f8d2146cFD2A1eF90394E7eC6565294A1731F7",
+        "quizHandlerLogic": "0xEC32796020A4cbf2fD589c266A1913c4846D2F40"
+      },
+      "lastDeployment": "2025-06-23T20:01:44.808Z"
+    },
+    "base": {
+      "chainId": 8453,
+      "contracts": {
+        "motherFactory": null,
+        "quizHandler": null,
+        "proxyAdmin": null
+      },
+      "lastDeployment": null
+    }
+  }
+}

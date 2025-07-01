@@ -61,7 +61,44 @@ module.exports = (sequelize) => {
     },
     transactionHash: {
       type: DataTypes.STRING,
-      allowNull: true // For future blockchain tx
+      allowNull: true // For blockchain tx
+    },
+    onChain: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Whether the answer has been recorded on-chain'
+    },
+    // ============ CONTRACT INTEGRATION FIELDS ============
+    // Added for new contract architecture compatibility
+    correctAnswersCount: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Allow null for existing records
+      defaultValue: null,
+      comment: 'Number of correct answers by this participant (for contract recording)'
+    },
+    incorrectAnswersCount: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Allow null for existing records
+      defaultValue: null,
+      comment: 'Number of incorrect answers by this participant (for contract recording)'
+    },
+    payoutAmount: {
+      type: DataTypes.STRING, // Handle large numbers as strings
+      allowNull: true, // Allow null for existing records
+      defaultValue: null,
+      comment: 'Amount paid out to this participant (in token units)'
+    },
+    botRecordingTxHash: {
+      type: DataTypes.STRING,
+      allowNull: true, // Allow null for existing records
+      comment: 'Transaction hash of bot recording results via recordQuizResult()'
+    },
+    recordedViaContract: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Whether this result was recorded via new contract recordQuizResult method'
     }
   }, {
     sequelize,

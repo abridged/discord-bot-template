@@ -1,0 +1,451 @@
+# Quiz Agent Intuition Integration Design
+# Author: Cascade
+# Date: 2025-05-27
+# Version: 1.3
+# Domain: Web3, Knowledge Graphs, Quiz Systems, Collab.Land, MCP
+# Status: Approved Design - Phased Implementation
+
+## Overview
+
+This document outlines the design for integrating the Quiz Agent with the Intuition knowledge graph through the Intuition MCP Server (github.com/0xintuition/intuition-mcp-server). The goal is to create a system that logs quiz activities for community engagement analysis while minimizing transaction costs and storage requirements. The design prioritizes efficient storage in Intuition while maintaining rich queryability for community and agent discovery.
+
+### Phased Implementation Approach
+
+The implementation will follow a phased approach:
+
+1. **Phase 1: Contract Implementation**
+   - Implement and validate the on-chain quiz contracts (QuizFactory and QuizEscrow)
+   - Integrate contracts with the existing "/ask" command
+   - Test and validate the full quiz lifecycle
+
+2. **Phase 2: Intuition Integration**
+   - Add Intuition integration using a one-phase recording approach
+   - Record quiz data in Intuition only after quiz completion/expiry
+   - Follow the minimal triple design outlined below
+
+The integration leverages:
+1. **Intuition MCP Server** for standardized knowledge graph interactions using the Model Context Protocol (MCP)
+2. **Collab.Land Account Kit SDK** for authentication, signing, and permissions management
+
+## Configuration and Environment
+
+The integration would require these environment variables:
+
+```
+# Intuition MCP Server Connection
+MCP_SERVER_ENDPOINT=https://mcp.intuition.example.com
+MCP_SERVER_NAME=intuition
+
+# Collab.Land Configuration
+COLLABLAND_API_KEY=your_collabland_api_key
+COLLABLAND_BOT_ID=your_bot_id
+
+# IPFS Configuration
+IPFS_GATEWAY=https://ipfs.example.com
+
+# Agent Configuration
+AGENT_ID=unique_agent_identifier
+```
+
+Note that we no longer need a separate AGENT_PRIVATE_KEY since signing is handled by Account Kit, and we're using the MCP server endpoint rather than direct Intuition API access.
+
+## Background
+
+The Quiz Agent is part of a Discord bot template that enables communities to create and participate in quizzes with token rewards. The system consists of:
+
+1. Smart contracts (QuizFactory.sol and QuizEscrow.sol) that handle fund management
+2. A Discord bot interface for community interaction
+3. An Intuition knowledge graph integration for tracking quiz activities
+
+The key challenges are to design an Intuition integration that minimizes storage costs while providing sufficient queryability for community discovery and agent analysis, to leverage the Model Context Protocol via the Intuition MCP server, and to seamlessly integrate with Collab.Land Account Kit for authentication and content integrity.
+
+## Design Principles
+
+1. **Minimalist Storage**: Store only essential relationships in Intuition
+2. **Rich Metadata**: Use entity metadata for frequently queried attributes
+3. **Off-Chain Storage**: Keep detailed quiz data in IPFS
+4. **Inference Support**: Derive relationships when possible instead of storing explicitly
+5. **Community Focus**: Optimize for community discovery use cases
+6. **Integrated Authentication**: Leverage Collab.Land Account Kit for identity verification
+7. **Role-Based Authorization**: Use Discord roles through Account Kit for permissions
+8. **Content Integrity**: Utilize Account Kit signing capabilities for metadata verification
+9. **Standardized Protocol**: Use Model Context Protocol for all knowledge graph interactions
+10. **Interoperability**: Ensure compatibility with other MCP-enabled systems
+
+## Knowledge Graph Design
+
+### Entities
+
+1. **Agent**
+   - Represents a Quiz Agent instance
+   - Stored once per agent
+   - Contains metadata about name, version, and type
+
+2. **Community**
+   - Represents a Discord community/server
+   - Stored once per community
+   - Contains metadata about name and member count
+
+3. **Quiz**
+   - Represents a quiz created by an agent for a community
+   - Links to detailed metadata stored off-chain (IPFS)
+
+### Relationships
+
+1. **is_a**
+   - Used for entity classification
+   - Example: `agent:123 is_a Agent`
+
+2. **created_by**
+   - Links a quiz to its creating agent
+   - Example: `quiz:456 created_by agent:123`
+
+3. **hosts**
+   - Links a community to a quiz it contains
+   - Example: `community:789 hosts quiz:456`
+
+4. **serves** (inferred, not stored)
+   - Relationship between agent and community
+   - Inferred via query: `?quiz created_by ?agent . ?community hosts ?quiz`
+
+### Triples Structure
+
+```javascript
+// Entity Definitions
+
+// Agent entity (stored once)
+{
+  subject: `agent:${agentId}`,
+  predicate: "is_a",
+  object: {
+    id: "Agent",
+    metadata: { 
+      name: "Quiz Bot", 
+      version: "1.0",
+      type: "QuizAgent"
+    }
+  }
+}
+
+// Community entity (stored once per community)
+{
+  subject: `community:${communityId}`,
+  predicate: "is_a",
+  object: {
+    id: "Community",
+    metadata: { 
+      name: "Discord Server",
+      member_count: 1250
+    }
+  }
+}
+
+// Quiz Relationships (stored for each quiz)
+{
+  subject: `quiz:${quizId}`,
+  predicate: "created_by",
+  object: `agent:${agentId}`
+}
+
+{
+  subject: `community:${communityId}`,
+  predicate: "hosts",
+  object: `quiz:${quizId}`
+}
+```
+
+## Off-Chain Storage
+
+Detailed quiz data is stored in IPFS and referenced via a metadata_uri attribute. This includes:
+
+1. Quiz questions and answer options
+2. Participant interactions and submissions
+3. Scoring and reward distribution details
+4. Analytics and performance metrics
+
+The IPFS hash is recorded as part of the quiz entity metadata, allowing clients to retrieve detailed information when needed while keeping Intuition storage minimal.
+
+## Implementation Flow
+
+### Phase 1: On-Chain Quiz Contract Implementation
+
+1. **Contract Development**
+   - Develop QuizFactory.sol and QuizEscrow.sol contracts
+   - Implement quiz creation, participant registration, and reward distribution
+
+2. **Integration with "/ask" Command**
+   - Extend the existing "/ask" command to create on-chain quiz escrows
+   - Leverage Account Kit for wallet interaction
+   - Use quiz expiry mechanism for automatic reward distribution
+
+3. **Validation and Testing**
+   - Test full quiz lifecycle: creation, participation, reward distribution
+   - Ensure contract security and proper fund handling
+
+### Phase 2: Intuition Integration (After Contract Validation)
+
+```javascript
+// Register a quiz agent with MCP Server and Account Kit integration
+async function registerAgent(agentId, name, version) {
+  // Get authentication token from Account Kit
+  const authToken = await accountKit.getAuthToken();
+  
+  // Initialize MCP client
+  const mcp = new MCP({
+    transport: 'http',
+    endpoint: process.env.MCP_SERVER_ENDPOINT,
+    serverName: process.env.MCP_SERVER_NAME,
+    authToken: authToken
+  });
+  
+  // Register agent in Intuition via MCP server
+  return await mcp.invoke('add_triple', {
+    subject: `agent:${agentId}`,
+    predicate: "is_a",
+    object: {
+      id: "Agent",
+      metadata: { 
+        name: name, 
+        version: version,
+        type: "QuizAgent"
+      }
+    }
+  });
+}
+```
+
+### Community Registration via MCP
+
+```javascript
+// Register a community via MCP server (done once per community)
+async function registerCommunity(communityId, name, memberCount) {
+  // Get authentication token from Account Kit
+  const authToken = await accountKit.getAuthToken();
+  
+  // Initialize MCP client
+  const mcp = new MCP({
+    transport: 'http',
+    endpoint: process.env.MCP_SERVER_ENDPOINT,
+    serverName: process.env.MCP_SERVER_NAME,
+    authToken: authToken
+  });
+  
+  return await mcp.invoke('add_triple', {
+    subject: `community:${communityId}`,
+    predicate: "is_a",
+    object: {
+      id: "Community",
+      metadata: { 
+        name: name,
+        member_count: memberCount
+      }
+    }
+  });
+}
+```
+
+### Quiz Recording
+
+```javascript
+// Record a completed quiz via MCP server (one-phase approach after quiz expiry)
+async function recordCompletedQuiz(quizId, communityId, agentId, quizData, participationData) {
+  // Get authentication token from Account Kit
+  const authToken = await accountKit.getAuthToken();
+  
+  // Initialize MCP client
+  const mcp = new MCP({
+    transport: 'http',
+    endpoint: process.env.MCP_SERVER_ENDPOINT,
+    serverName: process.env.MCP_SERVER_NAME,
+    authToken: authToken
+  });
+  
+  // Prepare complete quiz data with participation and reward information
+  const completeQuizData = {
+    ...quizData,
+    status: 'completed',
+    participants: participationData.participants,
+    totalParticipants: participationData.participants.length,
+    correctAnswerRate: participationData.correctAnswerRate,
+    rewards: participationData.rewards,
+    completedAt: Math.floor(Date.now() / 1000)
+  };
+  
+  // Sign quiz data with Account Kit
+  const signedData = await accountKit.sign(completeQuizData);
+  
+  // Upload signed data to IPFS
+  const metadataURI = await uploadToIPFS(signedData);
+  
+  // Record minimal relationships in Intuition via MCP
+  return await mcp.invoke('batch_add_triples', {
+    triples: [
+      {
+        subject: `quiz:${quizId}`,
+        predicate: "created_by",
+        object: `agent:${agentId}`
+      },
+      {
+        subject: `community:${communityId}`,
+        predicate: "hosts",
+        object: `quiz:${quizId}`
+      }
+    ]
+  });
+}
+```
+
+## Query Patterns via MCP
+
+### Find Communities by Topic
+
+```javascript
+// Query via MCP server
+async function findCommunitiesByTopic(topic) {
+  const mcp = new MCP({
+    transport: 'http',
+    endpoint: process.env.MCP_SERVER_ENDPOINT,
+    serverName: process.env.MCP_SERVER_NAME
+  });
+  
+  return await mcp.invoke('query', {
+    query: `
+      SELECT ?community ?name WHERE {
+        ?quiz metadata.topic "${topic}" .
+        ?community hosts ?quiz .
+        ?community metadata.name ?name .
+      }
+    `
+  });
+}
+```
+
+### Find Quizzes in a Community
+
+```javascript
+async function findQuizzesInCommunity(communityId) {
+  const mcp = new MCP({
+    transport: 'http',
+    endpoint: process.env.MCP_SERVER_ENDPOINT,
+    serverName: process.env.MCP_SERVER_NAME
+  });
+  
+  return await mcp.invoke('query', {
+    query: `
+      SELECT ?quiz WHERE {
+        community:${communityId} hosts ?quiz .
+      }
+    `
+  });
+}
+```
+
+### Count Quizzes per Community
+
+```
+SELECT ?community COUNT(?quiz) as ?quizCount WHERE {
+  ?community hosts ?quiz .
+}
+GROUP BY ?community
+ORDER BY DESC(?quizCount)
+```
+
+### Find Agents Serving a Community (Inferred)
+
+```
+SELECT DISTINCT ?agent WHERE {
+  ?quiz created_by ?agent .
+  community:discord:123 hosts ?quiz .
+}
+```
+
+## Authentication and Authorization
+
+The Quiz Agent integrates with Collab.Land Account Kit SDK for authentication and authorization:
+
+1. **Discord Identity**: Uses Account Kit to verify Discord user identities
+2. **Role-Based Access**: Leverages Discord roles through Account Kit for permission management
+3. **Content Signing**: Utilizes Account Kit's signing capabilities for metadata integrity
+4. **MCP Authorization**: Uses Account Kit tokens for authorizing MCP server requests
+5. **Smart Contract Integration**: For critical on-chain operations like reward distribution
+
+The MCP server provides an additional authorization layer, validating requests before they reach the Intuition knowledge graph.
+
+### Contract Authorization Flow (Phase 1)
+
+During the contract implementation phase, authorization follows this flow:
+
+1. Quiz creator authorization via Account Kit wallet verification
+2. Contract ownership and operation authorization via standard Solidity access controls
+3. Reward distribution authorization via contract expiry mechanism
+
+### Intuition Authorization Flow (Phase 2)
+
+After contract validation, Intuition integration will add:
+
+1. MCP server authorization using Account Kit tokens
+2. Content verification through signed IPFS metadata
+
+This approach eliminates the need for separate key management while ensuring that only authorized agents can record quiz data for their communities.
+
+## Rationale for Design Decisions
+
+### Why implement contracts first, then Intuition?
+
+The phased implementation approach was chosen because:
+1. It allows validation of core quiz functionality before adding discovery features
+2. It simplifies initial testing by focusing on a single integration point
+3. It ensures that contract interaction patterns are fully developed before adding Intuition
+
+### Why record in Intuition after quiz completion?
+
+The one-phase recording approach after quiz completion was chosen because:
+1. It minimizes transaction costs by recording quiz data only once
+2. It ensures all quiz data (including participation statistics) is available in a single record
+3. It simplifies the implementation by eliminating the need for update operations
+
+### Why "community hosts quiz" vs. "quiz deployed_in community"?
+
+We chose "community hosts quiz" as the relationship direction because:
+1. It optimizes for the most common query pattern: "What quizzes are in this community?"
+2. It emphasizes communities as the primary discovery entity
+3. It makes counting quizzes per community more efficient
+
+### Why minimal triples with inferred relationships?
+
+We decided to infer the agent-community relationship rather than store it explicitly because:
+1. It reduces the number of triples stored in Intuition (cost efficiency)
+2. The relationship can be reliably derived from existing data
+3. The query performance impact is acceptable for our use case
+
+### Why off-chain storage for detailed data?
+
+We store detailed quiz data off-chain because:
+1. Participant data and questions would be expensive to store in Intuition
+2. Detailed data is only needed when examining specific quizzes
+3. IPFS provides immutable storage with content-addressing
+
+## Future Extensions
+
+The design allows for future extensions such as:
+
+1. Adding quiz categories and tags
+2. Tracking community engagement metrics over time
+3. Supporting multiple agent types per community
+4. Adding reputation systems for agents and communities
+
+These can be added without disrupting the core knowledge graph structure.
+
+## References
+
+1. Intuition MCP Server (github.com/0xintuition/intuition-mcp-server)
+2. Model Context Protocol (MCP) Specification
+3. IPFS/IPNS Documentation
+4. Triple Store Query Optimization Patterns
+5. Web3 Knowledge Graph Best Practices
+6. Collab.Land Account Kit SDK Documentation
+7. Discord API Integration Patterns
+
+---
+
+This document is intended to provide comprehensive context for implementing the Intuition integration for the Quiz Agent system. It follows the principles outlined at https://llmstxt.org for creating context-rich documentation for IDE agents.

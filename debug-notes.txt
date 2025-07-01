@@ -1,0 +1,7 @@
+1. trying to use private key instead of Collab.Land Account Kit SDK
+2. using incorrect API endpoint
+3. alway reverting to Discord instead of Telegram
+4. a lot of errors encoding errors (lack of examples)
+5. error codes not verbose enougth
+6. UserOperation reverted during simulation with reason is opaque
+7. no context about contract deployment and gas costs

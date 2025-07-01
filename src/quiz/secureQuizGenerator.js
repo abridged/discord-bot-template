@@ -3,10 +3,13 @@
  * 
  * Generates quiz questions from content extracted from URLs
  * with enhanced security features to protect against common attacks
+ * 
+ * NOTE: This module has been updated to use placeholder/mock content for now.
+ * A real content fetcher implementation will be added separately.
  */
 
-const { fetchContent } = require('./contentFetcher');
 const sanitizeHtml = require('sanitize-html'); // You may need to install this package
+const quizGenerator = require('./quizGenerator');
 
 /**
  * Sanitizes text content to remove potentially harmful elements
@@ -64,9 +67,10 @@ async function generateQuiz(url, options = {}) {
   });
   
   try {
-    // Race the fetch against timeout
+    // Use mockFetchContent from quizGenerator instead of fetchContent
+    // Race the mock fetch against timeout
     const content = await Promise.race([
-      fetchContent(url),
+      quizGenerator.mockFetchContent(url),
       timeoutPromise
     ]);
     
@@ -226,6 +230,7 @@ async function generateQuestionsFromContent(content, count, difficulty = 'medium
   // Security measure: Limit generation attempts to prevent infinite loops
   const MAX_ATTEMPTS = 50;
   let totalAttempts = 0;
+  const maxUniqueAttempts = 10;
   
   for (let i = 0; i < adjustedCount; i++) {
     let questionGenerated = false;
@@ -305,9 +310,10 @@ async function generateQuestionsFromContent(content, count, difficulty = 'medium
     }
     
     // If we couldn't generate a unique question after max attempts, use a fallback
-    if (!questionGenerated) {
+    if (attempts >= maxUniqueAttempts) {
       const fallbackQuestion = generateFallbackQuestion(i, content.title, sessionId);
       questions.push(fallbackQuestion);
+      console.warn(`Warning: Generated fallback question ${i + 1} after ${maxUniqueAttempts} failed attempts for ${content.title}`);
     }
   }
   
@@ -318,13 +324,13 @@ async function generateQuestionsFromContent(content, count, difficulty = 'medium
  * Generates a fallback question when uniqueness cannot be achieved
  */
 function generateFallbackQuestion(index, title, sessionId) {
-  const fallbackQuestion = `Question #${index + 1} about ${title}`;
+  const fallbackQuestion = `[FALLBACK] Sample Question #${index + 1} about ${title} - This is placeholder content`;
   
   const options = [
-    `Option A for question ${index + 1}`,
-    `Option B for question ${index + 1}`,
-    `Option C for question ${index + 1}`,
-    `Option D for question ${index + 1}`
+    `[SAMPLE] Option A for question ${index + 1}`,
+    `[SAMPLE] Option B for question ${index + 1}`,
+    `[SAMPLE] Option C for question ${index + 1}`,
+    `[SAMPLE] Option D for question ${index + 1}`
   ];
   
   // Deterministic but varying correct answer

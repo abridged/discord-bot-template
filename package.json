@@ -15,11 +15,15 @@
     "tunnel": "node -e \"const domain = require('dotenv').config().parsed.NGROK_DOMAIN; console.log(`Starting direct ngrok tunnel to ${domain}...`); require('child_process').spawn('npx', ['ngrok', 'http', '--hostname=' + domain, '3000'], {stdio: 'inherit'});\""
   },
   "dependencies": {
+    "@collabland/accountkit-sdk": "^0.2.0",
+    "@mozilla/readability": "^0.6.0",
+    "@openzeppelin/contracts-upgradeable": "^5.3.0",
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
     "discord.js": "^14.14.1",
     "dotenv": "^16.5.0",
     "ethers": "^5.7.2",
+    "jsdom": "^26.1.0",
     "next": "14.1.0",
     "node-cache": "^5.1.2",
     "openai": "^4.98.0",
@@ -33,13 +37,36 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "@openzeppelin/contracts": "^5.3.0",
+    "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@types/jest": "^29.5.14",
+    "chai": "^4.3.10",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "ethereum-waffle": "^4.0.10",
+    "hardhat": "^2.24.0",
     "jest": "^29.7.0",
     "jest-environment-node": "^29.7.0",
     "ngrok": "^4.3.3",
     "nodemon": "^3.0.3",
+    "sinon": "^21.0.0",
     "supertest": "^7.1.0"
-  }
+  },
+  "description": "A modern Discord bot template using discord.js, Next.js, and ngrok for local development. Built for IDE agent-centric development with Collab.Land Account Kit integration support.",
+  "main": "src/bot/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abridged/discord-bot-template.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/abridged/discord-bot-template/issues"
+  },
+  "homepage": "https://github.com/abridged/discord-bot-template#readme"
 }

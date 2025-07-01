@@ -1,0 +1,38 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "version": "v4",
+  "timestamp": "2025-06-30T04:03:42.088Z",
+  "deployerAddress": "0x669ae74656B538c9a96205f8f4073d258EB4C85F",
+  "discordBotAddress": "0xDa04681DF85A8231b967E6cDeFC332fcabeEB0ee",
+  "contracts": {
+    "MotherFactory": {
+      "address": "0xf945A67d6f2EcAc2961DDC4E02fc992bF9e9a648",
+      "type": "simple"
+    },
+    "QuizHandler": {
+      "address": "0x6b7bc1E5Eee5A42336Bcb5b8d0B6b33D325A0b8a",
+      "type": "simple"
+    }
+  },
+  "features": {
+    "userDirectDeploy": true,
+    "botOnlyRestriction": false,
+    "upgradeableProxies": false,
+    "zeroFundingSupport": true,
+    "zeroRewardsSupport": true
+  },
+  "bugFixes": [
+    "Fixed QuizHandler validation to allow zero funding (msg.value >= DEPLOYMENT_FEE)",
+    "Fixed QuizHandler validation to allow zero rewards (removed reward requirement)",
+    "Fixed QuizEscrow constructor to allow zero funding (removed msg.value > 0 check)",
+    "Fixed QuizEscrow constructor to allow zero rewards (removed reward requirement)",
+    "Resolves 400 Bad Request errors during Discord bot quiz deployment"
+  ],
+  "notes": [
+    "v4 fixes contract validation issues preventing zero funding/rewards",
+    "Addresses root cause of Account Kit 400 Bad Request errors",
+    "Maintains all v3 features (user direct deployment, single-transaction)",
+    "Bot address still used for QuizHandler result recording authorization"
+  ]
+}

@@ -1,0 +1,334 @@
+@llmstxt/v1
+
+# Poll & Quiz On-chain Interaction Refactor
+
+Date: June 9, 2025
+Author: MOA Bot Development Team
+
+@purpose: Guide for IDE agents to assist with implementing the on-chain functionality for polls and quizzes using Collab.Land Account Kit and proxy-based smart contracts.
+
+## Project Context
+
+@context: This document covers the refactored approach to implementing blockchain interactions for the Discord bot's poll and quiz system. The design leverages Collab.Land Account Kit for wallet interactions and a factory/proxy pattern for smart contracts.
+
+@requirements:
+- Integrate with Collab.Land Account Kit for wallet resolution and transactions
+- Use factory pattern with minimal proxies for efficient contract deployment
+- Implement 2% fee mechanism for bot maintenance
+- Support multiple tokens and chains
+- Enable configurable rewards for quiz (correct/incorrect) and poll participation
+
+@domain_knowledge:
+- Discord bot uses slash commands to interact with users
+- Collab.Land Account Kit provides wallet resolution for Discord users
+- EIP-1167 minimal proxy pattern enables gas-efficient contract deployment
+- Quiz system has been previously implemented without blockchain integration
+
+## System Architecture
+
+@component_diagram:
+```
+┌─────────────────────┐      ┌─────────────────────┐      ┌─────────────────────┐
+│ DISCORD BOT         │      │ COLLAB.LAND         │      │ SMART CONTRACTS     │
+├─────────────────────┤      │ ACCOUNT KIT         │      ├─────────────────────┤
+│                     │      │                     │      │                     │
+│ - Command handling  │◄────►│ - Wallet resolution │◄────►│ - Factory contract  │
+│ - Quiz generation   │      │ - Transaction prep  │      │ - Quiz escrow       │
+│ - UI rendering      │      │ - Fee handling      │      │ - Poll escrow       │
+└─────────────────────┘      └─────────────────────┘      └─────────────────────┘
+```
+
+## Smart Contract Design
+
+@contract_structure:
+```solidity
+// Factory contract - key functions only
+contract PollQuizFactory {
+    address public quizImplementation;
+    address public pollImplementation;
+    address public botWallet;
+    uint256 public feeBps = 200; // 2%
+    
+    function createQuizEscrow(
+        address tokenAddress,
+        uint256 amount,
+        uint256 rewardCorrect,
+        uint256 rewardIncorrect
+    ) external returns (address) {
+        address escrow = Clones.clone(quizImplementation);
+        
+        QuizEscrow(escrow).initialize(
+            msg.sender, // creator
+            tokenAddress,
+            amount,
+            rewardCorrect,
+            rewardIncorrect,
+            botWallet,
+            feeBps
+        );
+        
+        return escrow;
+    }
+    
+    function createPollEscrow(
+        address tokenAddress,
+        uint256 amount,
+        uint256 rewardParticipation
+    ) external returns (address) {
+        // Similar to quiz escrow creation
+    }
+}
+
+// Quiz escrow contract - key functions only
+contract QuizEscrow {
+    // State variables
+    address public creator;
+    address public tokenAddress;
+    uint256 public totalAmount;
+    uint256 public remainingAmount;
+    uint256 public rewardCorrect;
+    uint256 public rewardIncorrect;
+    address public botWallet;
+    uint256 public feeBps;
+    
+    mapping(address => bool) public hasParticipated;
+    
+    function initialize(
+        address _creator,
+        address _tokenAddress, 
+        uint256 _amount,
+        uint256 _rewardCorrect,
+        uint256 _rewardIncorrect,
+        address _botWallet,
+        uint256 _feeBps
+    ) external {
+        // Initialize contract and collect fee
+        // Transfer tokens from creator to contract
+        // Transfer fee to bot wallet
+    }
+    
+    function payReward(
+        address participant,
+        uint256 score,
+        uint256 totalQuestions,
+        bytes calldata signature // For authorization
+    ) external {
+        // Calculate and pay reward based on score
+        // Verify signature for authorization
+    }
+}
+
+// Poll escrow contract - similar structure to quiz escrow
+contract PollEscrow {
+    // Similar structure with simplified reward mechanism
+}
+```
+
+## User Flows
+
+@quiz_flow:
+1. User calls `/mother quiz create` with token, amount, and reward parameters
+2. Bot generates quiz content using specified LLM URL
+3. Bot uses Account Kit to deploy quiz escrow contract via factory
+4. Quiz escrow collects 2% fee and holds remaining funds
+5. Discord displays interactive quiz message
+6. Users take quiz through Discord interaction
+7. Bot resolves user wallet address via Account Kit
+8. Bot calculates reward and sends transaction via Account Kit
+9. Quiz message updates to show participation and remaining funds
+
+@poll_flow:
+1. User calls `/mother poll create` with token, amount, and reward parameters
+2. Bot generates poll options using specified LLM URL
+3. Bot uses Account Kit to deploy poll escrow contract via factory
+4. Poll escrow collects 2% fee and holds remaining funds
+5. Discord displays interactive poll message
+6. Users vote through Discord interaction
+7. Bot resolves user wallet address via Account Kit
+8. Bot sends participation reward via Account Kit
+9. Poll message updates to show votes and remaining funds
+
+## Discord Integration
+
+@discord_commands:
+```javascript
+// Quiz creation command registration
+{
+  name: 'quiz',
+  description: 'Create a quiz with blockchain rewards',
+  options: [
+    {
+      name: 'url',
+      description: 'URL to LLM endpoint for quiz generation',
+      type: ApplicationCommandOptionType.String,
+      required: true
+    },
+    {
+      name: 'token',
+      description: 'Token address for rewards',
+      type: ApplicationCommandOptionType.String,
+      required: true
+    },
+    {
+      name: 'chain',
+      description: 'Chain ID for deployment',
+      type: ApplicationCommandOptionType.Integer,
+      required: true
+    },
+    {
+      name: 'amount',
+      description: 'Total amount to fund the quiz',
+      type: ApplicationCommandOptionType.Number,
+      required: true
+    },
+    {
+      name: 'reward_correct',
+      description: 'Reward amount per correct answer',
+      type: ApplicationCommandOptionType.Number,
+      required: true
+    },
+    {
+      name: 'reward_incorrect',
+      description: 'Reward amount per incorrect answer',
+      type: ApplicationCommandOptionType.Number,
+      required: true
+    }
+  ]
+}
+```
+
+@account_kit_integration:
+```javascript
+// Wallet resolution
+async function resolveUserWallet(discordUserId) {
+  const accountKit = getAccountKitClient();
+  return await accountKit.resolveWallet({
+    userId: discordUserId,
+    guildId: interaction.guildId
+  });
+}
+
+// Transaction preparation
+async function prepareEscrowDeployment(params) {
+  const accountKit = getAccountKitClient();
+  return await accountKit.prepareTransaction({
+    chainId: params.chainId,
+    from: params.creator,
+    to: FACTORY_CONTRACT_ADDRESS,
+    data: encodeCreateQuizEscrow(
+      params.tokenAddress,
+      params.amount,
+      params.rewardCorrect,
+      params.rewardIncorrect
+    )
+  });
+}
+```
+
+## Database Schema
+
+@database_models:
+```javascript
+// Quiz model with blockchain extensions
+const Quiz = sequelize.define('Quiz', {
+  // Existing fields
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  title: { type: DataTypes.STRING, allowNull: false },
+  creatorId: { type: DataTypes.STRING, allowNull: false },
+  
+  // New blockchain fields
+  tokenAddress: { type: DataTypes.STRING },
+  chainId: { type: DataTypes.INTEGER },
+  escrowAddress: { type: DataTypes.STRING },
+  totalAmount: { type: DataTypes.STRING },
+  rewardCorrect: { type: DataTypes.STRING },
+  rewardIncorrect: { type: DataTypes.STRING },
+  remainingAmount: { type: DataTypes.STRING }
+});
+
+// Quiz attempt with blockchain extensions
+const QuizAttempt = sequelize.define('QuizAttempt', {
+  // Existing fields
+  userId: { type: DataTypes.STRING, allowNull: false },
+  quizId: { type: DataTypes.INTEGER, allowNull: false },
+  score: { type: DataTypes.INTEGER },
+  
+  // New blockchain fields
+  rewardAmount: { type: DataTypes.STRING },
+  transactionHash: { type: DataTypes.STRING },
+  walletAddress: { type: DataTypes.STRING }
+});
+```
+
+## Implementation Guidelines
+
+@implementation_steps:
+1. Implement and deploy quiz and poll implementation contracts
+2. Deploy factory contract with implementation addresses
+3. Update Discord bot commands to include blockchain parameters
+4. Integrate with Account Kit for wallet resolution and transactions
+5. Create updated UI for quiz/poll creation and participation
+6. Implement transaction monitoring and status updates
+7. Add database schema extensions for blockchain data
+
+@security_considerations:
+- Use signatures to authorize reward distributions
+- Implement re-entrancy protection in escrow contracts
+- Validate all user inputs in Discord commands
+- Use safe transfer methods for ERC-20 tokens
+- Implement proper error handling for failed transactions
+
+## Future Extensions
+
+@extension_points:
+- Intuition knowledge graph integration
+- ERC-7710 delegation support
+- ERC-7521 intent handling
+- Multi-agent architecture with specialized agents
+
+## Testing Strategy
+
+@test_cases:
+- Test quiz/poll creation with various token types
+- Verify fee calculation and collection mechanism
+- Test reward distribution with different scores
+- Verify signature verification for rewards
+- Test error handling for insufficient funds
+- Validate multi-user participation scenarios
+
+@example_test:
+```javascript
+describe("Quiz Escrow", function() {
+  it("should correctly initialize and collect fees", async function() {
+    const tokenAmount = ethers.utils.parseEther("100");
+    const feeAmount = tokenAmount.mul(200).div(10000); // 2%
+    
+    await token.approve(factory.address, tokenAmount);
+    
+    const tx = await factory.createQuizEscrow(
+      token.address,
+      tokenAmount,
+      ethers.utils.parseEther("5"),
+      ethers.utils.parseEther("1")
+    );
+    
+    const receipt = await tx.wait();
+    const escrowAddress = receipt.events[0].args.escrowAddress;
+    
+    // Verify fee transfer
+    expect(await token.balanceOf(botWallet.address)).to.equal(feeAmount);
+    
+    // Verify remaining amount in escrow
+    const escrow = await ethers.getContractAt("QuizEscrow", escrowAddress);
+    expect(await token.balanceOf(escrow.address)).to.equal(tokenAmount.sub(feeAmount));
+  });
+})
+```
+
+## References
+
+@references:
+- EIP-1167: https://eips.ethereum.org/EIPS/eip-1167
+- Collab.Land Account Kit Documentation: [Documentation URL]
+- Factory Contract Pattern: https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones
+- Discord.js Interactions: https://discord.js.org/#/docs/main/stable/class/CommandInteraction

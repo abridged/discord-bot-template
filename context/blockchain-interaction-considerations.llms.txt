@@ -1,0 +1,226 @@
+@llmstxt/v1
+
+# Blockchain Interaction Considerations for Poll & Quiz System with Collab.Land Account Kit
+
+Date: June 8, 2025
+Author: MOA Discord Bot Team
+
+@purpose: This document provides guidance for LLM IDE agents assisting with implementation of blockchain transactions in the Discord bot poll and quiz system using Collab.Land Account Kit.
+
+## Project Context
+
+@context: The Discord bot is transitioning from a traditional poll/quiz system using factory + escrow contracts (Phase 1) to a more sophisticated architecture leveraging delegated execution via ERC-7710, intent-based operations via ERC-7521, and specialized token transfers via ERC-7715 (Phase 2).
+
+@requirements:
+- Support gasless transactions for seamless user experience
+- Maintain backward compatibility with existing polls/quizzes
+- Implement transparent fee distribution (2% to Account Kit, 5% to Orchestrator)
+- Create a consistent event emission system for tracking and indexing
+- Design for future-compatibility with ERC-7702 standards (Phase 3)
+
+@domain_knowledge:
+- ERC-7521 defines generalized intent structures for smart contract wallets
+- ERC-7710 provides standards for smart contract delegation (not an intent standard)
+- ERC-7715 specifies token transfer intent patterns
+- ERC-7702 enables account abstraction via alternative mempool
+- Collab.Land Account Kit provides wallet management and intent signing services
+
+## Implementation Requirements
+
+@standards_implementation:
+- All smart contracts must implement proper interfaces for their respective standards
+- Intent handlers must validate signatures using ERC-1271 compatible methods
+- Delegation proofs must follow the permission structure defined in ERC-7710
+- Token transfers should follow ERC-7715 action patterns for compatibility
+
+@security_considerations:
+- Implement nonce tracking to prevent replay attacks
+- Include validity periods for all delegations and intents
+- Follow check-effect-interaction pattern to prevent reentrancy
+- Use OpenZeppelin security libraries where appropriate
+- Validate all inputs with proper require statements and error messages
+- Allow for delegation revocation by users
+
+@gas_efficiency:
+- Optimize storage usage through variable packing
+- Use events for off-chain data that doesn't require on-chain verification
+- Implement batching for multiple operations where possible
+- Consider gas limits for all functions that may be called in batch
+- Track and display gas costs transparently to users
+
+@architecture_patterns:
+- Use factory pattern with minimal proxies for deployments
+- Separate core logic from implementation details through interfaces
+- Implement upgradeability through proxy patterns where needed
+- Create clear paths for state migration between contract versions
+- Emit detailed events for all significant state changes
+
+## Code Patterns and Examples
+
+@intent_creation:
+```javascript
+// Example intent structure following ERC-7521
+function createQuizIntent(
+  creatorAddress,
+  quizMetadata,
+  tokenAddress,
+  rewardAmount,
+  validUntil
+) {
+  return {
+    intentId: ethers.utils.id(`QUIZ_CREATION-${creatorAddress}-${Date.now()}`),
+    intentAccount: creatorAddress,
+    intentData: ethers.utils.defaultAbiCoder.encode(
+      ['address', 'bytes32', 'address', 'uint256'],
+      [creatorAddress, quizMetadata, tokenAddress, rewardAmount]
+    ),
+    validUntil: validUntil || Math.floor(Date.now() / 1000) + 3600, // 1 hour default
+    salt: ethers.utils.randomBytes(32),
+    intentType: 'QUIZ_CREATION'
+  };
+}
+```
+
+@delegation_proof:
+```javascript
+// Example delegation proof following ERC-7710
+function createDelegationProof(
+  delegator,
+  delegatee,
+  targetContract,
+  functionSelector,
+  validUntil,
+  nonce,
+  signature
+) {
+  return {
+    delegator: delegator,
+    delegatee: delegatee,
+    permissions: [{
+      target: targetContract,
+      functionSelector: functionSelector,
+      validUntil: validUntil
+    }],
+    nonce: nonce,
+    signature: signature
+  };
+}
+```
+
+@smart_contract_example:
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./interfaces/IIntentHandler.sol";
+import "./interfaces/IDelegationManager.sol";
+
+contract QuizIntentHandler is IIntentHandler, ReentrancyGuard {
+    // Handler for quiz creation intents
+    function handleIntent(bytes calldata intentData) external override nonReentrant returns (bool) {
+        // Decode the intent data
+        (address creator, bytes32 quizMetadata, address token, uint256 amount) = 
+            abi.decode(intentData, (address, bytes32, address, uint256));
+        
+        // Calculate fee distribution
+        uint256 accountKitFee = amount * 200 / 10000; // 2%
+        uint256 orchestratorFee = amount * 500 / 10000; // 5%
+        uint256 quizAmount = amount - accountKitFee - orchestratorFee;
+        
+        // Transfer tokens to this contract
+        require(IERC20(token).transferFrom(creator, address(this), amount), "Token transfer failed");
+        
+        // Distribute fees
+        require(IERC20(token).transfer(ACCOUNT_KIT_ADDRESS, accountKitFee), "AccountKit fee transfer failed");
+        require(IERC20(token).transfer(ORCHESTRATOR_ADDRESS, orchestratorFee), "Orchestrator fee transfer failed");
+        
+        // Create quiz escrow
+        address quizEscrow = _deployQuizEscrow(creator, quizMetadata, token, quizAmount);
+        
+        // Transfer remaining tokens to quiz escrow
+        require(IERC20(token).transfer(quizEscrow, quizAmount), "Quiz amount transfer failed");
+        
+        emit QuizCreated(quizEscrow, creator, token, amount, quizAmount);
+        return true;
+    }
+    
+    // Other required functions and events...
+}
+```
+
+@account_kit_integration:
+```javascript
+// Example integration with Collab.Land Account Kit
+async function handleQuizCreation(interaction) {
+  try {
+    // Extract command parameters
+    const userId = interaction.user.id;
+    const quizUrl = interaction.options.getString('url');
+    const token = interaction.options.getString('token');
+    const amount = interaction.options.getString('amount');
+    
+    // Generate quiz content and metadata hash
+    const quizContent = await generateQuizFromUrl(url);
+    const quizMetadata = ethers.utils.id(JSON.stringify(quizContent));
+    
+    // Set up Account Kit client
+    const accountKit = new CollabLandAccountKit(config);
+    const wallet = await accountKit.getWalletForUser(userId);
+    
+    // Check if user has a smart account or EOA
+    const isSmartAccount = await accountKit.isSmartContractWallet(wallet.address);
+    
+    if (isSmartAccount) {
+      // Create and sign intent directly
+      const intent = createQuizIntent(wallet.address, quizMetadata, token, amount);
+      const signedIntent = await accountKit.signIntent(intent, wallet);
+      return accountKit.submitIntent(signedIntent);
+    } else {
+      // Handle as UserOperation for EOAs
+      const userOp = createUserOpFromIntent(
+        createQuizIntent(wallet.address, quizMetadata, token, amount),
+        wallet.address
+      );
+      const signedUserOp = await accountKit.signUserOperation(userOp, wallet);
+      return bundlerService.submitUserOperation(signedUserOp);
+    }
+  } catch (error) {
+    console.error("Quiz creation failed:", error);
+    throw error;
+  }
+}
+```
+
+## Testing and Deployment Guidelines
+
+@testing_approach:
+- Unit test all intent creation and handling logic
+- Test delegation flow with various permission scenarios
+- Verify signature validation with both EOAs and smart contract wallets
+- Test gas consumption for different operation types and batch sizes
+- Simulate various error conditions and verify recovery mechanisms
+
+@deployment_strategy:
+- Deploy factory contracts first
+- Deploy implementation contracts for minimal proxies
+- Set up Delegation Manager with appropriate permissions
+- Configure event listeners and indexers for tracking
+- Perform staged rollout starting with non-critical polls/quizzes
+
+@monitoring_requirements:
+- Track successful vs failed intent executions
+- Monitor gas usage across different operation types
+- Record user engagement metrics with new vs old system
+- Measure average transaction completion times
+
+## References
+
+@references:
+- ERC-7521: https://eips.ethereum.org/EIPS/eip-7521
+- ERC-7710: https://eips.ethereum.org/EIPS/eip-7710
+- ERC-7715: https://eips.ethereum.org/EIPS/eip-7715
+- ERC-7702: https://eips.ethereum.org/EIPS/eip-7702
+- Collab.Land Documentation: https://docs.collab.land
+- OpenZeppelin Contracts: https://docs.openzeppelin.com/contracts

@@ -1,0 +1,145 @@
+# initial-blockchain.llms.txt
+# Version: 1.0.0
+# Date: 2025-06-03
+# Author: Cascade Assistant
+# Description: Documentation of blockchain interactions implementation in Discord bot
+
+## INTRODUCTION
+
+This file documents the implementation of blockchain wallet interactions via the Collab.Land Account Kit SDK v2 in a Discord bot. It contains detailed information about wallet retrieval mechanisms for both users and the bot itself, token balance checks, error handling, and UI display.
+
+## ARCHITECTURE
+
+The Discord bot interacts with blockchain wallets using the following components:
+
+1. **Account Kit SDK**: Primary interface to Collab.Land services for wallet retrieval
+   - Located in: `src/account-kit/sdk.js`
+   - Exposes functions: `getWallet`, `getUserWallet`, `getBotWallet`
+
+2. **Discord Commands**: User-facing slash commands
+   - `/wallet-info`: Displays user's wallet and token balances
+   - `/bot-wallet`: Displays bot's treasury wallet and token balances
+
+3. **Token Balance Checking**: RPC-based wallet balance retrieval
+   - Uses ethers.js v5 for blockchain connectivity
+   - Supports various EVM chains with multiple fallback RPC endpoints
+   - Handles both native tokens and ERC20 tokens
+
+## FUNCTIONALITY
+
+### Wallet Address Retrieval
+
+The SDK retrieves wallet addresses by calling the Collab.Land Account Kit v2 API. For the QA environment, there's a workaround using 'github' as the platform parameter since 'discord' is not fully supported yet.
+
+```javascript
+async function getWallet(options) {
+  const { id } = options;
+  if (!id) throw new Error('No ID provided for wallet retrieval');
+
+  // TEMPORARY: Using 'github' as platform due to issues with 'discord'/'telegram' on QA v2 EVM endpoint.
+  const platform = 'github';
+
+  try {
+    const accountKitClient = getAccountKitClient();
+    const responseData = await accountKitClient.v2.calculateAccountAddress(platform, id);
+    // Process response to extract wallet address...
+  }
+}
+```
+
+### Response Structure Handling
+
+The SDK correctly parses the nested response structure to extract EVM wallet addresses:
+
+```javascript
+if (responseData.data) {
+  if (responseData.data.evm && Array.isArray(responseData.data.evm) && responseData.data.evm.length > 0) {
+    const firstEvm = responseData.data.evm[0];
+    if (firstEvm && typeof firstEvm === 'object' && firstEvm.address) {
+      extractedWalletAddress = firstEvm.address;
+    }
+  }
+}
+```
+
+### Discord Interaction Handling
+
+Discord.js v14 interactions are handled with proper deferred replies and error handling:
+
+```javascript
+// Global handler in interactionCreate.js defers the interaction
+await interaction.deferReply({ ephemeral: true });
+
+// Command execution later uses editReply to update the response
+return interaction.editReply({
+  embeds: [embed]
+});
+```
+
+## IMPLEMENTATION DETAILS
+
+### Response Formatting
+
+Both wallet commands use consistent EmbedBuilder formatting:
+
+```javascript
+const embed = new EmbedBuilder()
+  .setColor(0x0099FF)
+  .setTitle('Bot Treasury Wallet')
+  .setDescription(`This smart wallet address is linked to the bot and serves as the escrow account for quiz funding and rewards.`)
+  .addFields(
+    { name: 'Address', value: `\`${walletAddress}\`` }
+  )
+  .setTimestamp()
+  .setFooter({ text: 'Account Kit Integration' });
+```
+
+### Error Handling
+
+Robust error handling is implemented throughout:
+
+1. **API Call Errors**: Detailed logging of SDK response structure and errors
+2. **Discord Interaction Errors**: Handling of already-replied interaction errors
+3. **RPC Connection Failures**: Multiple fallback endpoints with graceful degradation
+4. **Chain/Token Validation**: Verification of input parameters before blockchain calls
+
+### Balance Checking
+
+Token balances are checked using a multi-tiered approach:
+
+1. Connect to appropriate RPC endpoint with fallbacks
+2. Check if token is native or ERC20
+3. For ERC20, get decimals, symbol, and balance
+4. Format balance with proper decimal places
+5. Add visual indicators for low balances
+
+## KNOWN LIMITATIONS
+
+1. The Account Kit API in QA environment doesn't support 'discord' platform parameter for v2 EVM endpoint
+2. RPC endpoints may sometimes fail or be rate-limited
+3. Discord interaction handling requires careful coordination to prevent "already replied" errors
+4. Token balance checks may fail independently of wallet retrieval
+
+## FUTURE IMPROVEMENTS
+
+1. Implement caching for wallet addresses to reduce API calls
+2. Add support for multiple wallet addresses per user
+3. Implement transaction history display
+4. Add direct token transfer functionality
+5. Monitor for official support of 'discord' platform in API
+
+## TECHNICAL DEBT
+
+1. The 'github' platform parameter is a temporary workaround
+2. The interaction handling could be simplified with a middleware pattern
+3. RPC endpoint management could be improved with health checks
+
+## CONCLUSION
+
+The blockchain interaction functionality provides a robust way to retrieve and display wallet information for both the bot and users. It handles errors gracefully, provides useful feedback to users, and maintains consistent style across different commands.
+
+## REFERENCES
+
+1. Collab.Land Account Kit SDK: https://github.com/abridged/collabland-sdk
+2. Discord.js Documentation: https://discord.js.org/
+3. Ethers.js v5 Documentation: https://docs.ethers.org/v5/

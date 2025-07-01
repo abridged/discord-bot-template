@@ -1,0 +1,470 @@
+{
+  "duration": 1897,
+  "scenarios": [
+    {
+      "scenario": "Happy Path - 5 Users",
+      "success": true,
+      "result": {
+        "success": true,
+        "duration": 602,
+        "phases": {
+          "deployment": {
+            "quiz": {
+              "id": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "creatorDiscordId": "123456789012345678",
+              "creatorWalletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "sourceUrl": "https://simulation.example.com/quiz",
+              "difficulty": "medium",
+              "questionCount": 1,
+              "tokenAddress": "0x0000000000000000000000000000000000000000",
+              "chainId": 31337,
+              "rewardAmount": "100000000000000000",
+              "contractAddress": null,
+              "status": "active",
+              "createdAt": "2025-06-17T21:08:06.482Z",
+              "participants": [],
+              "escrowAddress": "0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF",
+              "transactionHash": "0xd5d71885b1fa660f60aa76909f869132a1e1ed04d655b4dec3727188fa0b5fa3",
+              "onChain": true,
+              "expiryTime": 1750280886,
+              "fundingStatus": "funded"
+            },
+            "question": {
+              "id": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionText": "What is the capital of France?",
+              "options": [
+                "London",
+                "Paris",
+                "Berlin",
+                "Madrid"
+              ],
+              "correctAnswer": 1,
+              "explanation": "Paris is the capital and largest city of France.",
+              "createdAt": "2025-06-17T21:08:06.482Z"
+            },
+            "escrowAddress": "0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF",
+            "transactionHash": "0xd5d71885b1fa660f60aa76909f869132a1e1ed04d655b4dec3727188fa0b5fa3"
+          },
+          "participation": [
+            {
+              "id": "answer_1750194486497_ugyjm58k8",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionId": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "userDiscordId": "10684499954616817",
+              "userWalletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:06.497Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194486598_d2bqgqnee",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionId": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "userDiscordId": "10065521366492921",
+              "userWalletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:06.598Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194486699_zcxi9oavm",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionId": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "userDiscordId": "10933465399333107",
+              "userWalletAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:06.699Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194486800_eeam4u4e1",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionId": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "userDiscordId": "10562107616030768",
+              "userWalletAddress": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:06.800Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194486901_vat1rw2cd",
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "questionId": "9305ece5-74db-4dd0-bcea-68911168ecfa",
+              "userDiscordId": "10102830348192527",
+              "userWalletAddress": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+              "selectedOptionIndex": 2,
+              "isCorrect": false,
+              "answeredAt": "2025-06-17T21:08:06.901Z",
+              "onChain": false
+            }
+          ],
+          "recording": [
+            {
+              "answerId": "answer_1750194486497_ugyjm58k8",
+              "userAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "transactionHash": "0x9114f3c380104744ab9aeb3ec35d0079b6918b6b505fe5da34888c9c67159497",
+              "gasUsed": {
+                "type": "BigNumber",
+                "hex": "0x03552f"
+              }
+            },
+            {
+              "answerId": "answer_1750194486598_d2bqgqnee",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF\",\"data\":\"0x55e08c2b00000000000000000000000090f79bf6eb2c4f870365e785982e1f101e93b90600000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194486699_zcxi9oavm",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF\",\"data\":\"0x55e08c2b00000000000000000000000015d34aaf54267db7d7c367839aaf71a00a2c6a6500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194486800_eeam4u4e1",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF\",\"data\":\"0x55e08c2b0000000000000000000000009965507d1a55bcc2695c58ba16fb37d819b0a4dc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194486901_vat1rw2cd",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF\",\"data\":\"0x55e08c2b000000000000000000000000976ea74026e726554db657fa54763abd0c3a0aa900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            }
+          ],
+          "verification": {
+            "simulation": {
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "escrowAddress": "0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF",
+              "participants": 5,
+              "answers": 5
+            },
+            "database": {
+              "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+              "totalParticipants": 0,
+              "correctAnswers": 0,
+              "incorrectAnswers": 0,
+              "onChainAnswers": 0,
+              "quiz": {
+                "id": "2c22d019-3534-4b0f-8131-aad6d750926a",
+                "quizId": "2c22d019-3534-4b0f-8131-aad6d750926a",
+                "creatorDiscordId": "123456789012345678",
+                "creatorWalletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                "sourceUrl": "https://simulation.example.com/quiz",
+                "difficulty": "medium",
+                "questionCount": 1,
+                "tokenAddress": "0x0000000000000000000000000000000000000000",
+                "chainId": 31337,
+                "rewardAmount": "100000000000000000",
+                "contractAddress": null,
+                "status": "active",
+                "createdAt": "2025-06-17T21:08:06.482Z",
+                "participants": [],
+                "escrowAddress": "0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF",
+                "transactionHash": "0xd5d71885b1fa660f60aa76909f869132a1e1ed04d655b4dec3727188fa0b5fa3",
+                "onChain": true,
+                "expiryTime": 1750280886,
+                "fundingStatus": "funded"
+              },
+              "answers": []
+            },
+            "contract": {
+              "creator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "correctReward": "0.06",
+              "incorrectReward": "0.04",
+              "fundingAmount": "0.099",
+              "remainingBalance": "0.039",
+              "totalCorrectAnswers": "1",
+              "totalIncorrectAnswers": "0",
+              "totalParticipants": "1",
+              "totalPaidOut": "0.06",
+              "creationTime": "2025-06-17T21:08:31.000Z",
+              "isEnded": false
+            },
+            "verification": {
+              "databaseContractSync": false,
+              "allAnswersOnChain": true,
+              "balanceCalculation": "verified"
+            }
+          }
+        }
+      },
+      "duration": 602
+    },
+    {
+      "scenario": "Scale Test - 10 Users",
+      "success": true,
+      "result": {
+        "success": true,
+        "duration": 1113,
+        "phases": {
+          "deployment": {
+            "quiz": {
+              "id": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "creatorDiscordId": "123456789012345678",
+              "creatorWalletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "sourceUrl": "https://simulation.example.com/quiz",
+              "difficulty": "medium",
+              "questionCount": 1,
+              "tokenAddress": "0x0000000000000000000000000000000000000000",
+              "chainId": 31337,
+              "rewardAmount": "200000000000000000",
+              "contractAddress": null,
+              "status": "active",
+              "createdAt": "2025-06-17T21:08:07.083Z",
+              "participants": [],
+              "escrowAddress": "0xBF908677c54510FE1b47FD0C212355A36417A8c7",
+              "transactionHash": "0x410a02cf74969744e43bb9dc9a052edae92f7cd8a6b17dfcfc3b3b7caf261432",
+              "onChain": true,
+              "expiryTime": 1750280887,
+              "fundingStatus": "funded"
+            },
+            "question": {
+              "id": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionText": "What is the capital of France?",
+              "options": [
+                "London",
+                "Paris",
+                "Berlin",
+                "Madrid"
+              ],
+              "correctAnswer": 1,
+              "explanation": "Paris is the capital and largest city of France.",
+              "createdAt": "2025-06-17T21:08:07.083Z"
+            },
+            "escrowAddress": "0xBF908677c54510FE1b47FD0C212355A36417A8c7",
+            "transactionHash": "0x410a02cf74969744e43bb9dc9a052edae92f7cd8a6b17dfcfc3b3b7caf261432"
+          },
+          "participation": [
+            {
+              "id": "answer_1750194487098_tr9dsw91c",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10068900297158303",
+              "userWalletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:07.098Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487200_bcfj2l97o",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10686858377322566",
+              "userWalletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+              "selectedOptionIndex": 2,
+              "isCorrect": false,
+              "answeredAt": "2025-06-17T21:08:07.200Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487301_ikexdwlom",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10740365507078020",
+              "userWalletAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:07.301Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487402_cli8a5j1l",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10679453104584816",
+              "userWalletAddress": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:07.402Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487503_ccqzmd7f1",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10290206593553718",
+              "userWalletAddress": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:07.503Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487604_2df1kmhsz",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10645362646574245",
+              "userWalletAddress": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+              "selectedOptionIndex": 2,
+              "isCorrect": false,
+              "answeredAt": "2025-06-17T21:08:07.604Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487704_d2ck8r22a",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10562561571352442",
+              "userWalletAddress": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+              "selectedOptionIndex": 2,
+              "isCorrect": false,
+              "answeredAt": "2025-06-17T21:08:07.704Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487806_owis396r9",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10933005435354285",
+              "userWalletAddress": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+              "selectedOptionIndex": 2,
+              "isCorrect": false,
+              "answeredAt": "2025-06-17T21:08:07.806Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194487907_g2bepzm1b",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10973431173682108",
+              "userWalletAddress": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:07.907Z",
+              "onChain": false
+            },
+            {
+              "id": "answer_1750194488008_yge8nspbb",
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "questionId": "92598d2e-7c23-4cd6-90a1-52350778c3ff",
+              "userDiscordId": "10485098292943502",
+              "userWalletAddress": "0x71bE63f3384f5fb98995898A86B02Fb2426c5788",
+              "selectedOptionIndex": 1,
+              "isCorrect": true,
+              "answeredAt": "2025-06-17T21:08:08.008Z",
+              "onChain": false
+            }
+          ],
+          "recording": [
+            {
+              "answerId": "answer_1750194487098_tr9dsw91c",
+              "userAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "transactionHash": "0x13c7131a19f5eba7dd414633ffe905fd8f5d4233926fa4d110388a3e9ff91621",
+              "gasUsed": {
+                "type": "BigNumber",
+                "hex": "0x03552f"
+              }
+            },
+            {
+              "answerId": "answer_1750194487200_bcfj2l97o",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b00000000000000000000000090f79bf6eb2c4f870365e785982e1f101e93b90600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487301_ikexdwlom",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b00000000000000000000000015d34aaf54267db7d7c367839aaf71a00a2c6a6500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487402_cli8a5j1l",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b0000000000000000000000009965507d1a55bcc2695c58ba16fb37d819b0a4dc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487503_ccqzmd7f1",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b000000000000000000000000976ea74026e726554db657fa54763abd0c3a0aa900000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487604_2df1kmhsz",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b00000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487704_d2ck8r22a",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b00000000000000000000000023618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487806_owis396r9",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b000000000000000000000000a0ee7a142d267c1f36714e4a8f75612f20a7972000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194487907_g2bepzm1b",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b000000000000000000000000bcd4042de499d14e55001ccbb24a551f3b95409600000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            },
+            {
+              "answerId": "answer_1750194488008_yge8nspbb",
+              "error": "cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason=\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\", method=\"estimateGas\", transaction={\"from\":\"0x70997970C51812dc3A010C7d01b50e0d17dc79C8\",\"to\":\"0xBF908677c54510FE1b47FD0C212355A36417A8c7\",\"data\":\"0x55e08c2b00000000000000000000000071be63f3384f5fb98995898a86b02fb2426c578800000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000\",\"accessList\":null}, error={\"name\":\"ProviderError\",\"_stack\":\"ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\\n    at HttpProvider.request (/Users/abridged/projects/discord-bot-template/node_modules/hardhat/src/internal/core/providers/http.ts:107:21)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at EthersProviderWrapper.send (/Users/abridged/projects/discord-bot-template/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)\",\"code\":-32603,\"_isProviderError\":true,\"data\":{\"message\":\"Error: VM Exception while processing transaction: reverted with reason string 'QuizEscrow: Insufficient funds for payout'\",\"data\":\"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000295175697a457363726f773a20496e73756666696369656e742066756e647320666f72207061796f75740000000000000000000000000000000000000000000000\"}}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)"
+            }
+          ],
+          "verification": {
+            "simulation": {
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "escrowAddress": "0xBF908677c54510FE1b47FD0C212355A36417A8c7",
+              "participants": 10,
+              "answers": 10
+            },
+            "database": {
+              "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+              "totalParticipants": 0,
+              "correctAnswers": 0,
+              "incorrectAnswers": 0,
+              "onChainAnswers": 0,
+              "quiz": {
+                "id": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+                "quizId": "440d2fe3-0379-430f-898f-2edfd8dd91f4",
+                "creatorDiscordId": "123456789012345678",
+                "creatorWalletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                "sourceUrl": "https://simulation.example.com/quiz",
+                "difficulty": "medium",
+                "questionCount": 1,
+                "tokenAddress": "0x0000000000000000000000000000000000000000",
+                "chainId": 31337,
+                "rewardAmount": "200000000000000000",
+                "contractAddress": null,
+                "status": "active",
+                "createdAt": "2025-06-17T21:08:07.083Z",
+                "participants": [],
+                "escrowAddress": "0xBF908677c54510FE1b47FD0C212355A36417A8c7",
+                "transactionHash": "0x410a02cf74969744e43bb9dc9a052edae92f7cd8a6b17dfcfc3b3b7caf261432",
+                "onChain": true,
+                "expiryTime": 1750280887,
+                "fundingStatus": "funded"
+              },
+              "answers": []
+            },
+            "contract": {
+              "creator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "correctReward": "0.15",
+              "incorrectReward": "0.05",
+              "fundingAmount": "0.199",
+              "remainingBalance": "0.049",
+              "totalCorrectAnswers": "1",
+              "totalIncorrectAnswers": "0",
+              "totalParticipants": "1",
+              "totalPaidOut": "0.15",
+              "creationTime": "2025-06-17T21:08:33.000Z",
+              "isEnded": false
+            },
+            "verification": {
+              "databaseContractSync": false,
+              "allAnswersOnChain": true,
+              "balanceCalculation": "verified"
+            }
+          }
+        }
+      },
+      "duration": 1113
+    }
+  ],
+  "performance": {
+    "averageDuration": 857.5,
+    "fastest": 602,
+    "slowest": 1113
+  },
+  "readiness": {
+    "contractDeployment": true,
+    "databaseIntegration": false,
+    "userSimulation": true,
+    "blockchainRecording": true,
+    "overallReadiness": true
+  }
+}

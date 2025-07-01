@@ -256,20 +256,35 @@ async function processQuizCommand(commandParams) {
   // Extract parameters differently based on the input type
   let url, tokenAddress, chainId, amount, userId;
   
-  if (isInteraction) {
+  if (commandParams.options) {
     // Extract from Discord interaction
     url = commandParams.options.getString('url');
-    tokenAddress = commandParams.options.getString('token') || '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1';
+    tokenAddress = commandParams.options.getString('token');
     chainId = commandParams.options.getInteger('chain') || 8453;
     amount = commandParams.options.getInteger('amount') || 10000;
     userId = commandParams.user.id;
   } else {
     // Extract from parameter object (for testing)
     url = commandParams.url;
-    tokenAddress = commandParams.token || '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1';
+    tokenAddress = commandParams.token;
     chainId = commandParams.chain || 8453;
     amount = commandParams.amount || 10000; 
     userId = commandParams.userId || 'anonymous';
+  }
+  
+  // CRITICAL: Validate token address when using real blockchain
+  const useRealBlockchain = process.env.USE_REAL_BLOCKCHAIN === 'true';
+  if (useRealBlockchain && !tokenAddress) {
+    const errorMessage = 'Token address is required when USE_REAL_BLOCKCHAIN=true. Please specify the --token parameter.';
+    await sendError(commandParams, errorMessage);
+    return { success: false, error: errorMessage };
+  }
+  
+  // Require explicit token address configuration
+  if (!tokenAddress) {
+    const errorMessage = 'Token address is required. Please specify a token address.';
+    await sendError(commandParams, errorMessage);
+    return { success: false, error: errorMessage };
   }
   
   // Sanitize URL to prevent security issues
@@ -279,7 +294,7 @@ async function processQuizCommand(commandParams) {
     await sendError(commandParams, errorMessage);
     return { success: false, error: errorMessage };
   }
-  
+
   // Generate a unique operation ID based on user ID and timestamp
   const opId = `quiz_${userId}_${Date.now()}`;
   
@@ -718,9 +733,10 @@ async function processQuizResults(quizId, userAnswers, correctAnswer) {
  * @param {string} quizId - Quiz ID
  * @param {string} contractAddress - Contract address
  * @param {Object} signer - Ethers.js signer
+ * @param {Object} quizData - Quiz data containing token address and chain ID
  * @returns {Promise<Object>} Distribution results
  */
-async function handleQuizExpiry(quizId, contractAddress, signer) {
+async function handleQuizExpiry(quizId, contractAddress, signer, quizData) {
   try {
     // Get quiz contract and distribute rewards
     // For the test, we'll use a hardcoded correct answer index (1)
@@ -729,13 +745,18 @@ async function handleQuizExpiry(quizId, contractAddress, signer) {
     // Call distributeRewards with the correct answer index
     const results = await distributeRewards(contractAddress, signer, correctAnswerIndex);
     
-    // Process token distribution
+    // Validate required quiz data
+    if (!quizData?.tokenAddress || !quizData?.chainId) {
+      throw new Error('Quiz data missing required token address or chain ID for reward distribution');
+    }
+    
+    // Process token distribution using actual quiz parameters
     const distributionResults = await processRewardDistribution({
       quizId,
       correctUsers: results.correctUsers,
       incorrectUsers: results.incorrectUsers,
-      tokenAddress: '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1',
-      chainId: 8453
+      tokenAddress: quizData.tokenAddress,
+      chainId: quizData.chainId
     }, results);
     
     return {
@@ -750,6 +771,42 @@ async function handleQuizExpiry(quizId, contractAddress, signer) {
       error: `Failed to handle quiz expiry: ${error.message}`
     };
   }
+}
+
+/**
+ * Reconcile quiz state when inconsistencies are detected
+ * @param {string} quizId - The quiz ID
+ * @param {string|null} contractAddress - The contract address (or null if missing)
+ * @returns {Promise<Object>} Reconciliation result
+ */
+async function reconcileQuizState(quizId, contractAddress) {
+  // If quiz exists but contract doesn't, recreate the contract
+  if (!contractAddress) {
+    // In a real implementation, we would fetch the quiz data from database
+    // and recreate the contract with actual quiz parameters
+    console.error(`❌ RECONCILIATION ERROR: Quiz ${quizId} missing contract address - requires manual intervention`);
+    
+    // For now, return error rather than using hardcoded values
+    return {
+      success: false,
+      error: 'Quiz contract address missing - cannot reconcile without original quiz parameters',
+      quizId,
+      requiresManualIntervention: true
+    };
+  }
+  
+  // Other inconsistency cases would be handled here
+  return { action: 'no_action_needed', success: true };
+}
+
+/**
+ * Clean up orphaned resources
+ * @returns {Promise<Object>} Cleanup result
+ */
+async function cleanupOrphanedResources() {
+  // In a real implementation, we would scan for orphaned resources
+  // and clean them up
+  return { cleaned: 0, success: true };
 }
 
 /**
@@ -818,49 +875,6 @@ async function recoverPendingOperations() {
   // For the test, we'll simulate successful recovery
   return { recovered: 1, success: true };
 }
-
-/**
- * Reconcile quiz state when inconsistencies are detected
- * @param {string} quizId - The quiz ID
- * @param {string|null} contractAddress - The contract address (or null if missing)
- * @returns {Promise<Object>} Reconciliation result
- */
-async function reconcileQuizState(quizId, contractAddress) {
-  // If quiz exists but contract doesn't, recreate the contract
-  if (!contractAddress) {
-    // In a real implementation, we would fetch the quiz data
-    // and recreate the contract
-    const result = await createQuizEscrow({
-      quizId,
-      tokenAddress: '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1',
-      chainId: 8453,
-      amount: 10000,
-      quizData: { questions: [] }
-    });
-    
-    return { 
-      action: 'recreated_contract', 
-      contractAddress: result.contractAddress,
-      success: true 
-    };
-  }
-  
-  // Other inconsistency cases would be handled here
-  return { action: 'no_action_needed', success: true };
-}
-
-/**
- * Clean up orphaned resources
- * @returns {Promise<Object>} Cleanup result
- */
-async function cleanupOrphanedResources() {
-  // In a real implementation, we would scan for orphaned resources
-  // and clean them up
-  return { cleaned: 0, success: true };
-}
-
-// Sanitize URL to prevent malicious inputs - now using the enhanced security module implementation
-// Implementation moved to src/security/inputSanitizer.js
 
 module.exports = {
   processQuizCommand,

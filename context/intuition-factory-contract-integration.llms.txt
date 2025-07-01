@@ -1,0 +1,420 @@
+@llmstxt/v1
+
+# Intuition Integration with Factory Contract System
+
+Date: June 9, 2025
+Author: MOA Bot Development Team
+
+@purpose: Guide for IDE agents to assist with integrating the Intuition knowledge graph with our blockchain factory contract system for polls and quizzes.
+
+## Project Context
+
+@context: This integration is part of the Discord bot's blockchain architecture, focusing on the factory contract system that deploys minimal proxy-based escrow contracts for polls and quizzes. The architecture follows a three-phase roadmap from direct escrow contracts through delegated execution to wallet intents.
+
+@requirements:
+- Maintain core functionality independent from Intuition integration
+- Add optional Intuition references to contract structures
+- Support identity verification between blockchain addresses and Intuition atoms
+- Prepare for future agent discovery capabilities
+
+@domain_knowledge:
+- The factory contract uses the EIP-1167 minimal proxy pattern for escrow contract creation
+- Each poll/quiz gets its own escrow contract deployed via the factory
+- Intuition provides a knowledge graph with entity discovery capabilities
+- Integration should prepare for the multi-agent architecture in Phase 2
+
+## Implementation Guidelines
+
+@integration_patterns:
+- Reference Fields Pattern: Add optional Intuition atom ID fields to contract structures
+- Event Emission Pattern: Include Intuition references in emitted events
+- Identity Verification Pattern: Support signature-based verification of identity claims
+- Metadata Enhancement Pattern: Use off-chain services to enrich on-chain data
+
+@contract_structure:
+```solidity
+// Key structures and fields for Intuition integration
+contract PollQuizFactory {
+    // Intuition reference in quiz data
+    struct QuizData {
+        bytes32 quizId;
+        address creator;
+        uint256 rewardAmount;
+        bytes32 intuitionAtomId;  // Optional reference to Intuition
+    }
+    
+    // Storage with Intuition references
+    mapping(bytes32 => QuizData) public quizzes;
+    
+    // Events with Intuition references
+    event QuizCreated(
+        bytes32 indexed quizId,
+        address indexed creator,
+        address escrowAddress,
+        bytes32 intuitionAtomId  // Including the reference in events
+    );
+    
+    // Functions that support Intuition integration
+    function createQuiz(
+        string calldata title,
+        uint256 rewardAmount,
+        bytes32 intuitionAtomId  // Optional reference
+    ) external returns (address) {
+        // Implementation details...
+    }
+    
+    // Optional identity verification
+    function verifyIntuitionIdentity(
+        bytes32 intuitionAtomId,
+        bytes calldata signature
+    ) external view returns (bool) {
+        // Implementation details...
+    }
+}
+```
+
+@off_chain_components:
+```javascript
+// Event indexing service for Intuition integration
+class IntuitionIndexer {
+    constructor(factoryAddress, intuitionClient) {
+        this.factory = new ethers.Contract(factoryAddress, FactoryABI, provider);
+        this.intuitionClient = intuitionClient;
+    }
+    
+    async initialize() {
+        // Listen for events with Intuition references
+        this.factory.on("QuizCreated", async (quizId, creator, escrow, intuitionAtomId) => {
+            if (intuitionAtomId !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
+                await this.processIntuitionReference(quizId, creator, escrow, intuitionAtomId);
+            }
+        });
+    }
+    
+    async processIntuitionReference(quizId, creator, escrow, intuitionAtomId) {
+        // Process the Intuition reference...
+    }
+}
+```
+
+## Code Examples
+
+@factory_contract:
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+
+contract IntuitionIntegratedFactory is Ownable, EIP712 {
+    using ECDSA for bytes32;
+    
+    // Implementation addresses
+    address public quizImplementation;
+    address public pollImplementation;
+    
+    // Fee configuration
+    uint256 public orchestratorFeeBps = 200; // 2%
+    address public orchestratorFeeRecipient;
+    
+    // Intuition integration
+    struct EntityData {
+        bytes32 entityId;
+        address escrowAddress;
+        address creator;
+        bytes32 intuitionAtomId;
+        bool exists;
+    }
+    
+    // Storage
+    mapping(bytes32 => EntityData) public entities;
+    
+    // Intuition identity verification
+    mapping(address => bytes32) public verifiedIntuitionIds;
+    
+    // Events
+    event QuizCreated(
+        bytes32 indexed quizId,
+        address indexed creator,
+        address escrowAddress,
+        bytes32 intuitionAtomId
+    );
+    
+    event PollCreated(
+        bytes32 indexed pollId,
+        address indexed creator,
+        address escrowAddress,
+        bytes32 intuitionAtomId
+    );
+    
+    event IntuitionIdentityVerified(
+        address indexed account,
+        bytes32 indexed intuitionAtomId
+    );
+    
+    constructor(
+        address _quizImplementation,
+        address _pollImplementation,
+        address _orchestratorFeeRecipient
+    ) EIP712("IntuitionFactory", "1") {
+        quizImplementation = _quizImplementation;
+        pollImplementation = _pollImplementation;
+        orchestratorFeeRecipient = _orchestratorFeeRecipient;
+    }
+    
+    // Create a quiz with optional Intuition reference
+    function createQuiz(
+        string calldata title,
+        uint256 rewardAmount,
+        bytes32 intuitionAtomId // Optional
+    ) external returns (address) {
+        // Generate unique ID
+        bytes32 quizId = keccak256(
+            abi.encode(
+                "QUIZ",
+                msg.sender,
+                title,
+                block.timestamp
+            )
+        );
+        
+        // Ensure uniqueness
+        require(!entities[quizId].exists, "Quiz ID already exists");
+        
+        // Deploy clone
+        address quizEscrow = Clones.clone(quizImplementation);
+        
+        // Initialize the quiz escrow
+        IQuizEscrow(quizEscrow).initialize(
+            msg.sender,
+            title,
+            rewardAmount
+        );
+        
+        // Store entity data with Intuition reference
+        entities[quizId] = EntityData({
+            entityId: quizId,
+            escrowAddress: quizEscrow,
+            creator: msg.sender,
+            intuitionAtomId: intuitionAtomId,
+            exists: true
+        });
+        
+        // Emit event with Intuition reference
+        emit QuizCreated(quizId, msg.sender, quizEscrow, intuitionAtomId);
+        
+        return quizEscrow;
+    }
+    
+    // Similar function for polls...
+    
+    // Verify an Intuition identity claim using EIP-712
+    function verifyIntuitionIdentity(
+        bytes32 intuitionAtomId,
+        bytes calldata signature
+    ) external {
+        // Create the typed data hash
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256("IntuitionIdentity(address account,bytes32 intuitionAtomId)"),
+                msg.sender,
+                intuitionAtomId
+            )
+        );
+        
+        // Get the EIP-712 digest
+        bytes32 digest = _hashTypedDataV4(structHash);
+        
+        // Recover signer address
+        address signer = digest.recover(signature);
+        
+        // Verify signer is the sender
+        require(signer == msg.sender, "Invalid signature");
+        
+        // Store verified mapping
+        verifiedIntuitionIds[msg.sender] = intuitionAtomId;
+        
+        // Emit event
+        emit IntuitionIdentityVerified(msg.sender, intuitionAtomId);
+    }
+    
+    // Other factory functions...
+}
+
+interface IQuizEscrow {
+    function initialize(
+        address creator,
+        string calldata title,
+        uint256 rewardAmount
+    ) external;
+}
+```
+
+@discord_bot_integration:
+```javascript
+// Discord bot integration with Intuition
+async function createQuizWithIntuitionReference(interaction, quizTitle, rewardAmount) {
+  try {
+    // Get user's connected wallet
+    const userWallet = await getUserWallet(interaction.user.id);
+    if (!userWallet) {
+      return interaction.reply({
+        content: "Please connect your wallet first using /connect-wallet",
+        ephemeral: true
+      });
+    }
+    
+    // Check if user has an Intuition atom ID
+    let intuitionAtomId = "0x0000000000000000000000000000000000000000000000000000000000000000"; // Zero as default
+    
+    try {
+      // Look up user in Intuition by address
+      const intuitionResponse = await intuitionClient.get_account_info({
+        address: userWallet.address
+      });
+      
+      if (intuitionResponse && intuitionResponse.id) {
+        intuitionAtomId = intuitionResponse.id;
+      }
+    } catch (error) {
+      console.log("Intuition lookup failed, continuing with zero reference", error);
+      // Non-blocking - continue without Intuition reference
+    }
+    
+    // Create the quiz transaction
+    const tx = await factoryContract.connect(userWallet).createQuiz(
+      quizTitle,
+      ethers.utils.parseEther(rewardAmount),
+      intuitionAtomId
+    );
+    
+    await interaction.reply({
+      content: `Creating your quiz! Transaction: ${etherscanBaseUrl}/tx/${tx.hash}`,
+      ephemeral: true
+    });
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    
+    // Extract quiz ID and escrow address from events
+    const quizCreatedEvent = receipt.events.find(e => e.event === "QuizCreated");
+    const { quizId, escrowAddress } = quizCreatedEvent.args;
+    
+    // Store quiz information in database
+    await db.quizzes.create({
+      quizId: quizId,
+      escrowAddress: escrowAddress,
+      creator: interaction.user.id,
+      title: quizTitle,
+      rewardAmount: rewardAmount,
+      intuitionAtomId: intuitionAtomId === "0x0000000000000000000000000000000000000000000000000000000000000000" ? null : intuitionAtomId
+    });
+    
+    await interaction.followUp({
+      content: `Quiz "${quizTitle}" created successfully! Use /quiz-manage ${quizId} to configure questions.`,
+      ephemeral: false
+    });
+    
+  } catch (error) {
+    console.error("Quiz creation failed", error);
+    await interaction.followUp({
+      content: `Failed to create quiz: ${error.message}`,
+      ephemeral: true
+    });
+  }
+}
+```
+
+## Testing Guidelines
+
+@test_cases:
+- Test quiz creation with and without Intuition references
+- Verify event emissions include correct Intuition atom IDs
+- Test identity verification with valid and invalid signatures
+- Test graceful handling of Intuition service unavailability
+
+@integration_tests:
+```javascript
+// Example integration test
+describe("Intuition Integration", function() {
+  it("should create a quiz with Intuition reference", async function() {
+    // Setup Intuition mock
+    const intuitionAtomId = "0x1234567890123456789012345678901234567890123456789012345678901234";
+    
+    // Create quiz with reference
+    const tx = await factory.connect(user).createQuiz(
+      "Test Quiz",
+      ethers.utils.parseEther("1.0"),
+      intuitionAtomId
+    );
+    
+    const receipt = await tx.wait();
+    
+    // Extract event data
+    const event = receipt.events.find(e => e.event === "QuizCreated");
+    expect(event.args.intuitionAtomId).to.equal(intuitionAtomId);
+    
+    // Verify storage
+    const quizId = event.args.quizId;
+    const quizData = await factory.entities(quizId);
+    expect(quizData.intuitionAtomId).to.equal(intuitionAtomId);
+  });
+  
+  it("should handle identity verification correctly", async function() {
+    // Generate signature for Intuition identity
+    const intuitionAtomId = "0x1234567890123456789012345678901234567890123456789012345678901234";
+    const signature = await generateEIP712Signature(user, intuitionAtomId);
+    
+    // Verify identity
+    await factory.connect(user).verifyIntuitionIdentity(intuitionAtomId, signature);
+    
+    // Check storage
+    const storedId = await factory.verifiedIntuitionIds(user.address);
+    expect(storedId).to.equal(intuitionAtomId);
+  });
+});
+```
+
+## Development Roadmap
+
+@phase1: Focus on adding Intuition reference fields and event emissions to the factory contract. This is a non-blocking enhancement that adds metadata capabilities without changing core functionality.
+
+@phase2: Implement identity verification between blockchain addresses and Intuition atoms using EIP-712 signatures. This enables trustless linking of identities across systems.
+
+@phase3: Prepare for agent discovery by creating an agent registry contract with Intuition references for each registered agent type.
+
+## Security Considerations
+
+@security_notes:
+- All Intuition integrations should be optional and non-blocking
+- Core contract functionality must work even if Intuition services are unavailable
+- Identity verification should use cryptographic proof rather than trusting off-chain assertions
+- No critical contract logic should depend on external Intuition data
+
+@input_validation:
+```solidity
+// Example secure handling of external references
+function processIntuitionReference(bytes32 intuitionAtomId) internal view {
+    // Never trust external references for critical operations
+    // Only use as additional metadata
+    
+    // Example validation - check zero address
+    if (intuitionAtomId == bytes32(0)) {
+        return; // Handle gracefully
+    }
+    
+    // Use reference for non-critical operations only
+}
+```
+
+## References
+
+@references:
+- EIP-1167: https://eips.ethereum.org/EIPS/eip-1167
+- EIP-712: https://eips.ethereum.org/EIPS/eip-712
+- Intuition MCP Server: https://github.com/0xIntuition/intuition-mcp-server
+- Factory Contract Design: /context/notes/2025-06-08-blockchain-interaction-considerations.md
+- Three-Phase Roadmap: /context/notes/2025-06-08-three-phase-roadmap.md

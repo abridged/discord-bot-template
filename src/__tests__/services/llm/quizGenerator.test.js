@@ -35,7 +35,9 @@ jest.mock('openai', () => {
 
 // Mock the promptTemplates module
 jest.mock('../../../services/llm/promptTemplates', () => ({
-  quizGeneration: "This is a mock prompt template"
+  quizGeneration: jest.fn((content, numQuestions, difficulty) => {
+    return `Mock quiz generation prompt for ${numQuestions} questions with ${difficulty} difficulty`;
+  })
 }));
 
 // Mock the content service

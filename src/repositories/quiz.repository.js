@@ -7,6 +7,7 @@
  */
 class IQuizRepository {
   async saveQuiz(quizData) { throw new Error('Method not implemented'); }
+  async updateQuizFunding(quizId, fundingData) { throw new Error('Method not implemented'); }
   async getQuiz(id) { throw new Error('Method not implemented'); }
   async getQuizzes(filters) { throw new Error('Method not implemented'); }
   async saveQuestion(questionData) { throw new Error('Method not implemented'); }
@@ -43,6 +44,11 @@ class DatabaseQuizRepository extends IQuizRepository {
         tokenAddress: quizData.tokenAddress,
         chainId: quizData.chainId,
         rewardAmount: quizData.rewardAmount,
+        fundingStatus: quizData.fundingStatus || 'unfunded',
+        treasuryWalletAddress: quizData.treasuryWalletAddress || null,
+        fundingTransactionHash: quizData.fundingTransactionHash || null,
+        distributionTransactionHash: quizData.distributionTransactionHash || null,
+        distributedAt: quizData.distributedAt || null,
         createdAt: new Date(),
         expiresAt: quizData.expiresAt,
         quizHash: quizData.quizHash || null
@@ -50,18 +56,79 @@ class DatabaseQuizRepository extends IQuizRepository {
 
       // If questions are provided, save them as well
       if (quizData.questions && Array.isArray(quizData.questions)) {
-        await Promise.all(quizData.questions.map((question, index) => 
-          this.saveQuestion({
-            ...question,
+        console.log(`Saving ${quizData.questions.length} questions for quiz ${quiz.id}`);
+        
+        // Map each question to the database schema format
+        const questionsToSave = quizData.questions.map((question, index) => {
+          // Make sure questionText exists (required by the database)
+          if (!question.questionText) {
+            question.questionText = question.question || question.text || `Question ${index + 1}`;
+          }
+          
+          // Log each question as we prepare it
+          console.log(`Preparing question ${index} for database:`, {
+            questionText: question.questionText,
+            optionsCount: Array.isArray(question.options) ? question.options.length : 0,
+            correctOptionIndex: question.correctOptionIndex
+          });
+          
+          return {
+            questionText: question.questionText,
+            options: question.options || [],
+            correctOptionIndex: question.correctOptionIndex !== undefined ? question.correctOptionIndex : 0,
             quizId: quiz.id,
             order: index
-          })
-        ));
+          };
+        });
+        
+        // Save each question with proper error handling
+        for (const q of questionsToSave) {
+          try {
+            const questionId = await this.saveQuestion(q);
+            console.log(`Saved question with ID: ${questionId}`);
+          } catch (error) {
+            console.error(`Error saving question for quiz ${quiz.id}:`, error);
+          }
+        }
+      } else {
+        console.warn(`No questions to save for quiz ${quiz.id}`);
       }
 
       return quiz.id;
     } catch (error) {
       console.error('Error saving quiz:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update quiz funding status and related information
+   * @param {string} quizId - Quiz ID
+   * @param {Object} fundingData - Funding data to update
+   * @returns {Promise<boolean>} - Success status
+   */
+  async updateQuizFunding(quizId, fundingData) {
+    try {
+      const quiz = await this.models.Quiz.findByPk(quizId);
+      
+      if (!quiz) {
+        console.error(`Quiz with ID ${quizId} not found for funding update`);
+        return false;
+      }
+      
+      // Update funding-related fields
+      await quiz.update({
+        fundingStatus: fundingData.fundingStatus,
+        treasuryWalletAddress: fundingData.treasuryWalletAddress,
+        fundingTransactionHash: fundingData.fundingTransactionHash,
+        // Only update distributionTransactionHash and distributedAt if they are provided
+        ...(fundingData.distributionTransactionHash && { distributionTransactionHash: fundingData.distributionTransactionHash }),
+        ...(fundingData.distributedAt && { distributedAt: fundingData.distributedAt })
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating quiz funding:', error);
       throw error;
     }
   }
