@@ -13,7 +13,7 @@ const { createBlockchainService } = require('../blockchain');
 const models = require('../../database/models');
 
 // Set environment variable to use real blockchain by default
-process.env.USE_REAL_BLOCKCHAIN = process.env.USE_REAL_BLOCKCHAIN || 'true';
+process.env.USE_REAL_BLOCKCHAIN = process.env.USE_REAL_BLOCKCHAIN || 'false';
 
 // Track initialization state
 let initialized = false;
