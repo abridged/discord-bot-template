@@ -509,7 +509,8 @@ module.exports = {
             // Show completion message by replacing the previous question
             try {
               await interaction.editReply({
-                embeds: [completionEmbed]
+                embeds: [completionEmbed],
+                components: [] // Remove all buttons from the previous question
               });
             } catch (completionError) {
               console.log('Failed to show quiz completion, interaction may have expired:', completionError);
@@ -519,6 +520,7 @@ module.exports = {
                 await interaction.channel.send({
                   content: 'Your quiz is now complete!',
                   embeds: [completionEmbed],
+                  components: [], // Remove all buttons
                   ephemeral: true
                 });
               }
