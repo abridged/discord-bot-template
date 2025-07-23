@@ -4,11 +4,8 @@ const { backgroundWalletLookup } = require('../../services/walletMappingService'
 
 // Constants for quiz creation defaults
 const QUIZ_DEFAULTS = {
-  FUNDING_AMOUNT: 10000,
-  CORRECT_REWARD_PERCENT: 75,
-  INCORRECT_REWARD_PERCENT: 25,
-  DEFAULT_TOKEN_ADDRESS: process.env.DEFAULT_TOKEN_ADDRESS || '0xb1E9C41e4153F455A30e66A2DA37D515C81a16D1', // SEEDS token on Base Sepolia
-  DEFAULT_CHAIN_ID: process.env.DEFAULT_CHAIN_ID || '84532' // Base Sepolia
+  CORRECT_REWARD_POINTS: 75,
+  INCORRECT_REWARD_POINTS: 25
 };
 
 // Poll configuration
@@ -273,58 +270,37 @@ module.exports = {
       // URL input for quiz content
       const urlInput = new TextInputBuilder()
         .setCustomId('url')
-        .setLabel('Content URL (required)')
+        .setLabel('Content URL (Required)')
         .setPlaceholder('Enter URL to article, video, or content for the quiz')
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
         .setMaxLength(500);
         
-      // Token address input with default value
-      const tokenAddressInput = new TextInputBuilder()
-        .setCustomId('tokenAddress')
-        .setLabel('Token Address (required)')
-        .setPlaceholder('Enter the ERC20 token contract address')
-        .setValue(QUIZ_DEFAULTS.DEFAULT_TOKEN_ADDRESS)
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true)
-        .setMaxLength(42);
-        
-      // Chain ID input with default value
-      const chainIdInput = new TextInputBuilder()
-        .setCustomId('chainId')
-        .setLabel('Chain ID (default is Base Sepolia)')
-        .setPlaceholder('Enter chain ID')
-        .setValue(QUIZ_DEFAULTS.DEFAULT_CHAIN_ID)
+      // Correct answer reward points input
+      const correctRewardInput = new TextInputBuilder()
+        .setCustomId('correctRewardPoints')
+        .setLabel('Correct Answer Reward Points (Required)')
+        .setPlaceholder('Enter points for correct answers')
+        .setValue(QUIZ_DEFAULTS.CORRECT_REWARD_POINTS.toString())
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
         
-      // Funding amount input with default value
-      const fundingAmountInput = new TextInputBuilder()
-        .setCustomId('fundingAmount')
-        .setLabel('Funding Amount (integer only)')
-        .setPlaceholder('Enter funding amount in tokens')
-        .setValue(QUIZ_DEFAULTS.FUNDING_AMOUNT.toString())
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-        
-      // Consolidated reward field (format: "correct,incorrect")
-      const rewardsInput = new TextInputBuilder()
-        .setCustomId('rewards')
-        .setLabel('Rewards (correct%,incorrect%)')
-        .setPlaceholder('Example: 75,25 (must sum to 100)')
-        .setValue(`${QUIZ_DEFAULTS.CORRECT_REWARD_PERCENT},${QUIZ_DEFAULTS.INCORRECT_REWARD_PERCENT}`)
+      // Incorrect answer reward points input
+      const incorrectRewardInput = new TextInputBuilder()
+        .setCustomId('incorrectRewardPoints')
+        .setLabel('Incorrect Answer Reward Points (Required)')
+        .setPlaceholder('Enter points for incorrect answers')
+        .setValue(QUIZ_DEFAULTS.INCORRECT_REWARD_POINTS.toString())
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
       // Create action rows to hold the inputs (maximum of 5 allowed by Discord)
       const urlRow = new ActionRowBuilder().addComponents(urlInput);
-      const tokenAddressRow = new ActionRowBuilder().addComponents(tokenAddressInput);
-      const chainIdRow = new ActionRowBuilder().addComponents(chainIdInput);
-      const fundingAmountRow = new ActionRowBuilder().addComponents(fundingAmountInput);
-      const rewardsRow = new ActionRowBuilder().addComponents(rewardsInput);
+      const correctRewardRow = new ActionRowBuilder().addComponents(correctRewardInput);
+      const incorrectRewardRow = new ActionRowBuilder().addComponents(incorrectRewardInput);
 
       // Add the action rows to the modal
-      modal.addComponents(urlRow, tokenAddressRow, chainIdRow, fundingAmountRow, rewardsRow);
+      modal.addComponents(urlRow, correctRewardRow, incorrectRewardRow);
       
       // Show the modal directly to avoid timeout
       await interaction.showModal(modal);

@@ -56,6 +56,18 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING, // Storing as string to handle large numbers
       allowNull: false
     },
+    correctRewardPoints: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 75,
+      comment: 'Points awarded for correct answers'
+    },
+    incorrectRewardPoints: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 25,
+      comment: 'Points awarded for incorrect answers'
+    },
     fundingStatus: {
       type: DataTypes.ENUM('unfunded', 'pending', 'funded', 'distributing', 'distributed'),
       defaultValue: 'unfunded',

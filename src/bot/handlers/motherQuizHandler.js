@@ -59,175 +59,173 @@ async function handleMotherQuizSubmission(interaction) {
       return false;
     }
 
-    // ALWAYS perform balance check regardless of USE_REAL_BLOCKCHAIN flag
-    // This ensures Collab.Land Account Kit functionality works consistently
-    await interaction.editReply({
-      content: '🔍 Checking wallet balance...',
-      ephemeral: true
-    });
-
-    try {
-      console.log(`Checking balance for user ${interaction.user.id}`);
-      
-      // Get user's wallet address using Account Kit SDK
-      userWallet = await getUserWallet(interaction.user.id);
-      
-      if (!userWallet) {
-        await interaction.editReply({
-          content: '❌ **ERROR:** Unable to retrieve your wallet address. Please ensure your wallet is connected.',
-          ephemeral: true
-        });
-        global.interactionTracker.delete(interactionId);
-        return false;
-      }
-      
-      console.log(`Checking balance for wallet ${userWallet}`);
-      
-      // Convert amount from frontend units to wei (assuming 18 decimals for most ERC20 tokens)
-      const { ethers } = require('ethers');
-      const requiredAmountWei = ethers.utils.parseUnits(quizParams.params.fundingAmount.toString(), 18).toString();
-      
-      // Check user's token balance using blockchain service
-      const blockchainService = createBlockchainService();
-      const balanceResult = await blockchainService.checkUserBalance(
-        userWallet,
-        quizParams.params.tokenAddress,
-        requiredAmountWei,
-        quizParams.params.chainId
-      );
-      
-      if (balanceResult.hasInsufficientBalance) {
-        const errorMessage = balanceResult.mockData 
-          ? `❌ **[MOCK] Insufficient Balance**\n\n**Required:** ${balanceResult.requiredAmountFormatted || quizParams.params.fundingAmount} ${balanceResult.tokenSymbol || 'tokens'}\n**Available:** ${balanceResult.balanceFormatted || '0'} ${balanceResult.tokenSymbol || 'tokens'}\n\nPlease ensure you have sufficient tokens to fund this quiz.`
-          : `❌ **Insufficient Balance**\n\n**Required:** ${balanceResult.requiredAmountFormatted || quizParams.params.fundingAmount} ${balanceResult.tokenSymbol || 'tokens'}\n**Available:** ${balanceResult.balanceFormatted || '0'} ${balanceResult.tokenSymbol || 'tokens'}\n\nPlease ensure you have sufficient tokens to fund this quiz.`;
-        
-        await interaction.editReply({
-          content: errorMessage,
-          ephemeral: true
-        });
-        global.interactionTracker.delete(interactionId);
-        return false;
-      }
-      
-      console.log(`✅ Balance check passed for user ${interaction.user.id}: ${balanceResult.balanceFormatted} ${balanceResult.tokenSymbol}`);
-      
-      // Balance check passed - proceed with quiz creation
-      // Generate quiz IDs
-      const crypto = require('crypto');
-      const creationTime = Date.now();
-      const urlHash = crypto.createHash('md5').update(quizParams.params.url).digest('hex').substring(0, 10);
-      const uniqueQuizId = `${urlHash}_${creationTime}`;
-      const quizId = quizParams.params.url; // For backward compatibility
-
-      // Determine chain name
-      let chainName = 'Unknown Chain';
-      if (quizParams.params.chainId === 1) chainName = 'Ethereum Mainnet';
-      else if (quizParams.params.chainId === 4) chainName = 'Rinkeby Testnet';
-      else if (quizParams.params.chainId === 5) chainName = 'Goerli Testnet';
-      else if (quizParams.params.chainId === 42161) chainName = 'Arbitrum One';
-      else if (quizParams.params.chainId === 137) chainName = 'Polygon';
-      else if (quizParams.params.chainId === 8453) chainName = 'Base';
-      else if (quizParams.params.chainId === 84532) chainName = 'Base Sepolia';
-
-      // Store quiz parameters in global cache for "Take Quiz" button
-      global.quizParamsCache.set(uniqueQuizId, {
-        url: quizParams.params.url,
-        tokenAddress: quizParams.params.tokenAddress,
-        chainId: quizParams.params.chainId,
-        fundingAmount: quizParams.params.fundingAmount,
-        chainName,
-        createdAt: Date.now(),
-        createdBy: interaction.user.id,
-        uniqueQuizId,
-        quizId
+    // Only perform balance check when USE_REAL_BLOCKCHAIN=true
+    const useRealBlockchain = process.env.USE_REAL_BLOCKCHAIN === 'true';
+    
+    if (useRealBlockchain) {
+      await interaction.editReply({
+        content: '🔍 Checking wallet balance...',
+        ephemeral: true
       });
 
-      // Perform blockchain submission if USE_REAL_BLOCKCHAIN=true
-      if (process.env.USE_REAL_BLOCKCHAIN === 'true') {
-        console.log('🔗 USE_REAL_BLOCKCHAIN=true: Performing blockchain submission during quiz creation...');
-        try {
-          const quizData = {
-            id: uniqueQuizId,
-            quizId: uniqueQuizId,
-            creator: interaction.user.id,
-            creatorDiscordId: interaction.user.id,
-            creatorWalletAddress: userWallet,
-            sourceUrl: quizParams.params.url,
-            url: quizParams.params.url,
-            fundingAmount: quizParams.params.fundingAmount,
-            chainId: quizParams.params.chainId,
-            tokenAddress: quizParams.params.tokenAddress,
-            rewardAmount: quizParams.params.fundingAmount,
-            difficulty: 'medium',
-            questionCount: 0,
-            questions: [],
-            createdAt: new Date(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            rewardsDistribution: {
-              correct: quizParams.params.rewardCorrect,
-              incorrect: quizParams.params.rewardIncorrect
-            }
-          };
-
-          const { saveQuiz } = require('../../services/storage');
-          await saveQuiz(quizData, userWallet);
-          console.log('✅ Blockchain submission completed successfully');
-          
-        } catch (blockchainError) {
-          console.error('❌ Blockchain submission failed:', blockchainError);
+      try {
+        console.log(`Checking balance for user ${interaction.user.id}`);
+        
+        // Get user's wallet address using Account Kit SDK
+        userWallet = await getUserWallet(interaction.user.id);
+        
+        if (!userWallet) {
           await interaction.editReply({
-            content: `❌ **Quiz Creation Failed**\n\n${blockchainError.message}\n\nPlease try again or check your blockchain configuration.`,
+            content: '❌ **ERROR:** Unable to retrieve your wallet address. Please ensure your wallet is connected.',
             ephemeral: true
           });
           global.interactionTracker.delete(interactionId);
           return false;
         }
-      } else {
-        console.log('🔗 USE_REAL_BLOCKCHAIN=false: Skipping blockchain submission (dev mode)');
-      }
-
-      // Create response embed for public message
-      const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-      
-      const devModeLabel = process.env.USE_REAL_BLOCKCHAIN === 'true' ? '' : '[DEV MODE] ';
-      
-      const embed = new EmbedBuilder()
-        .setColor('#4CAF50')
-        .setTitle(`${devModeLabel}Onchain Quiz Available!`)
-        .setDescription(`**${interaction.user.username}** created a new quiz based on this URL:`)
-        .addFields(
-          { name: 'Source URL', value: quizParams.params.url },
-          { name: 'Network', value: `${chainName} (${quizParams.params.chainId})` },
-          { name: 'Funding Amount', value: `${quizParams.params.fundingAmount} tokens` }
-        )
-        .setFooter({ text: `Click the button below to take the quiz` })
-        .setTimestamp();
-
-      // Create "Take Quiz" button
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`quiz_take:${uniqueQuizId}`)
-            .setLabel('Take Quiz')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('🧠')
+        
+        console.log(`Checking balance for wallet ${userWallet}`);
+        
+        // Convert amount from frontend units to wei (assuming 18 decimals for most ERC20 tokens)
+        const { ethers } = require('ethers');
+        const requiredAmountWei = ethers.utils.parseUnits(quizParams.params.fundingAmount.toString(), 18).toString();
+        
+        // Check user's token balance using blockchain service
+        const blockchainService = createBlockchainService();
+        const balanceResult = await blockchainService.checkUserBalance(
+          userWallet,
+          quizParams.params.tokenAddress,
+          requiredAmountWei,
+          quizParams.params.chainId
         );
+        
+        if (balanceResult.hasInsufficientBalance) {
+          const errorMessage = balanceResult.mockData 
+            ? `❌ **[MOCK] Insufficient Balance**\n\n**Required:** ${balanceResult.requiredAmountFormatted || quizParams.params.fundingAmount} ${balanceResult.tokenSymbol || 'tokens'}\n**Available:** ${balanceResult.balanceFormatted || '0'} ${balanceResult.tokenSymbol || 'tokens'}\n\nPlease ensure you have sufficient tokens to fund this quiz.`
+            : `❌ **Insufficient Balance**\n\n**Required:** ${balanceResult.requiredAmountFormatted || quizParams.params.fundingAmount} ${balanceResult.tokenSymbol || 'tokens'}\n**Available:** ${balanceResult.balanceFormatted || '0'} ${balanceResult.tokenSymbol || 'tokens'}\n\nPlease ensure you have sufficient tokens to fund this quiz.`;
+          
+          await interaction.editReply({
+            content: errorMessage,
+            ephemeral: true
+          });
+          global.interactionTracker.delete(interactionId);
+          return false;
+        }
+        
+        console.log(`✅ Balance check passed for user ${interaction.user.id}: ${balanceResult.balanceFormatted} ${balanceResult.tokenSymbol}`);
+            } catch (balanceError) {
+        console.error('Error checking user balance:', balanceError);
+        await interaction.editReply({
+          content: '❌ **ERROR:** Unable to verify your wallet balance. Please try again later.',
+          ephemeral: true
+        });
+        global.interactionTracker.delete(interactionId);
+        return false;
+      }
+    } else {
+      console.log('🔗 USE_REAL_BLOCKCHAIN=false: Skipping balance check (dev mode)');
+      
+      // In development mode, still get wallet for consistency but don't validate balance
+      try {
+        userWallet = await getUserWallet(interaction.user.id);
+        if (userWallet) {
+          console.log(`✅ Retrieved wallet for dev mode: ${userWallet}`);
+        } else {
+          console.log('⚠️  No wallet found in dev mode, continuing without wallet');
+        }
+      } catch (walletError) {
+        console.log('⚠️  Wallet retrieval failed in dev mode, continuing without wallet');
+      }
+    }
 
-      // Send public message with quiz
-      await interaction.editReply({
-        embeds: [embed],
-        components: [row]
-      });
+    // Proceed with quiz creation
+    // Generate quiz IDs
+    const crypto = require('crypto');
+    const creationTime = Date.now();
+    const urlHash = crypto.createHash('md5').update(quizParams.params.url).digest('hex').substring(0, 10);
+    const uniqueQuizId = `${urlHash}_${creationTime}`;
+    const quizId = quizParams.params.url; // For backward compatibility
 
-    } catch (balanceError) {
-      console.error('Error checking user balance:', balanceError);
+    // Store quiz parameters in global cache for "Take Quiz" button
+    global.quizParamsCache.set(uniqueQuizId, {
+      url: quizParams.params.url,
+      correctRewardPoints: quizParams.params.correctRewardPoints,
+      incorrectRewardPoints: quizParams.params.incorrectRewardPoints,
+      createdAt: Date.now(),
+      createdBy: interaction.user.id,
+      uniqueQuizId,
+      quizId
+    });
+
+    // Always save quiz to database regardless of blockchain mode
+    console.log('💾 Saving quiz to database...');
+    try {
+      const quizData = {
+        id: uniqueQuizId,
+        quizId: uniqueQuizId,
+        creator: interaction.user.id,
+        creatorDiscordId: interaction.user.id,
+        creatorWalletAddress: userWallet,
+        sourceUrl: quizParams.params.url,
+        url: quizParams.params.url,
+        correctRewardPoints: quizParams.params.correctRewardPoints,
+        incorrectRewardPoints: quizParams.params.incorrectRewardPoints,
+        // Required database fields with default values for development mode
+        tokenAddress: '0x0000000000000000000000000000000000000000', // Default null address
+        chainId: 1, // Default to Ethereum mainnet
+        rewardAmount: '0', // Default to 0
+        difficulty: 'medium',
+        questionCount: 0,
+        questions: [],
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      };
+
+      const { saveQuiz } = require('../../services/storage');
+      await saveQuiz(quizData, userWallet);
+      console.log('✅ Quiz saved to database successfully');
+      
+    } catch (saveError) {
+      console.error('❌ Quiz save failed:', saveError);
       await interaction.editReply({
-        content: '❌ **ERROR:** Unable to verify your wallet balance. Please try again later.',
+        content: `❌ **Quiz Creation Failed**\n\n${saveError.message}\n\nPlease try again.`,
         ephemeral: true
       });
       global.interactionTracker.delete(interactionId);
       return false;
     }
+
+    // Create response embed for public message
+    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    
+    const devModeLabel = process.env.USE_REAL_BLOCKCHAIN === 'true' ? '' : '[DEV MODE] ';
+    
+    const embed = new EmbedBuilder()
+      .setColor('#4CAF50')
+      .setTitle(`${devModeLabel}Quiz Available!`)
+      .setDescription(`**${interaction.user.username}** created a new quiz based on this URL:`)
+      .addFields(
+        { name: 'Source URL', value: quizParams.params.url },
+        { name: 'Correct Answer Reward', value: `${quizParams.params.correctRewardPoints} points` },
+        { name: 'Incorrect Answer Reward', value: `${quizParams.params.incorrectRewardPoints} points` }
+      )
+      .setFooter({ text: `Click the button below to take the quiz` })
+      .setTimestamp();
+
+    // Create "Take Quiz" button
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`quiz_take:${uniqueQuizId}`)
+          .setLabel('Take Quiz')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🧠')
+      );
+
+    // Send public message with quiz
+    await interaction.editReply({
+      embeds: [embed],
+      components: [row]
+    });
 
     // Clean up tracker
     global.interactionTracker.delete(interactionId);
@@ -263,45 +261,24 @@ function extractQuizParameters(interaction) {
   try {
     // Get the quiz details from the modal
     const url = interaction.fields.getTextInputValue('url');
-    const fundingAmountStr = interaction.fields.getTextInputValue('fundingAmount');
-    const rewardsDistribution = interaction.fields.getTextInputValue('rewards');
-    const chainId = interaction.fields.getTextInputValue('chainId');
-    const tokenAddress = interaction.fields.getTextInputValue('tokenAddress');
+    const correctRewardPointsStr = interaction.fields.getTextInputValue('correctRewardPoints');
+    const incorrectRewardPointsStr = interaction.fields.getTextInputValue('incorrectRewardPoints');
     
-    // Parse and validate funding amount
-    const fundingAmount = parseInt(fundingAmountStr, 10);
-    if (isNaN(fundingAmount) || fundingAmount < 0) {
+    // Parse and validate reward points
+    const correctRewardPoints = parseInt(correctRewardPointsStr, 10);
+    const incorrectRewardPoints = parseInt(incorrectRewardPointsStr, 10);
+    
+    if (isNaN(correctRewardPoints) || correctRewardPoints < 0) {
       return {
         valid: false,
-        error: '❌ **ERROR:** Funding amount must be a valid positive number.'
-      };
-    }
-
-    // Validate rewards distribution format
-    if (!rewardsDistribution.includes(',')) {
-      return {
-        valid: false,
-        error: '❌ **ERROR:** Rewards must be formatted as "correct,incorrect" (two comma-separated values)'
+        error: '❌ **ERROR:** Correct answer reward points must be a valid positive number.'
       };
     }
     
-    const [rewardCorrect, rewardIncorrect] = rewardsDistribution.split(',');
-    const rewardCorrectVal = Number(rewardCorrect);
-    const rewardIncorrectVal = Number(rewardIncorrect);
-    
-    // Validate reward values
-    if (isNaN(rewardCorrectVal) || isNaN(rewardIncorrectVal)) {
+    if (isNaN(incorrectRewardPoints) || incorrectRewardPoints < 0) {
       return {
         valid: false,
-        error: '❌ **ERROR:** Reward values must be valid numbers.'
-      };
-    }
-
-    // Validate rewards don't exceed funding
-    if (rewardCorrectVal > fundingAmount || rewardIncorrectVal > fundingAmount) {
-      return {
-        valid: false,
-        error: `🚫 **VALIDATION ERROR:** Reward amounts (${rewardCorrectVal}, ${rewardIncorrectVal}) cannot exceed the funding amount (${fundingAmount}).\n\nPlease try again with valid values.`
+        error: '❌ **ERROR:** Incorrect answer reward points must be a valid positive number.'
       };
     }
 
@@ -315,41 +292,18 @@ function extractQuizParameters(interaction) {
       };
     }
 
-    // Validate token address format (basic check for Ethereum address)
-    if (!/^0x[a-fA-F0-9]{40}$/.test(tokenAddress)) {
-      return {
-        valid: false,
-        error: '❌ **ERROR:** Please provide a valid Ethereum token address (0x followed by 40 hexadecimal characters).'
-      };
-    }
-
-    // Validate chain ID
-    const chainIdNum = parseInt(chainId, 10);
-    if (isNaN(chainIdNum) || chainIdNum < 1) {
-      return {
-        valid: false,
-        error: '❌ **ERROR:** Please provide a valid chain ID.'
-      };
-    }
-
     console.log('Quiz parameters validated successfully:', {
       url,
-      fundingAmount,
-      rewardCorrect: rewardCorrectVal,
-      rewardIncorrect: rewardIncorrectVal,
-      chainId: chainIdNum,
-      tokenAddress
+      correctRewardPoints,
+      incorrectRewardPoints
     });
 
     return {
       valid: true,
       params: {
         url,
-        fundingAmount,
-        rewardCorrect: rewardCorrectVal,
-        rewardIncorrect: rewardIncorrectVal,
-        chainId: chainIdNum,
-        tokenAddress
+        correctRewardPoints,
+        incorrectRewardPoints
       }
     };
 
