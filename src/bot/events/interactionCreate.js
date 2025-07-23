@@ -435,15 +435,6 @@ module.exports = {
               .addFields(
                 { name: 'Score', value: `${score}/${totalQuestions} (${percentage.toFixed(1)}%)` }
               );
-              
-            // Create "Claim Reward" button
-            const claimRewardButton = new ButtonBuilder()
-              .setCustomId(`claim-reward-${activeQuizSession.quizId}-${userId}`)
-              .setLabel('💰 Claim Reward')
-              .setStyle(ButtonStyle.Success);
-              
-            const claimRewardRow = new ActionRowBuilder()
-              .addComponents(claimRewardButton);
             
             // Record quiz completion
             if (interaction.client.quizDb) {
@@ -488,8 +479,7 @@ module.exports = {
             // Show completion message by replacing the previous question
             try {
               await interaction.editReply({
-                embeds: [completionEmbed],
-                components: [claimRewardRow] // Remove any buttons
+                embeds: [completionEmbed]
               });
             } catch (completionError) {
               console.log('Failed to show quiz completion, interaction may have expired:', completionError);
@@ -499,7 +489,6 @@ module.exports = {
                 await interaction.channel.send({
                   content: 'Your quiz is now complete!',
                   embeds: [completionEmbed],
-                  components: [claimRewardRow],
                   ephemeral: true
                 });
               }
@@ -569,90 +558,7 @@ module.exports = {
         return;
       }
       
-      // Handle claim reward button (after quiz completion)
-      if (interaction.customId.startsWith('claim-reward-')) {
-        try {
-          await interaction.deferReply({ ephemeral: true });
-          
-          // Parse the customId to extract quizId
-          const parts = interaction.customId.split('-');
-          const quizId = parts[2];
-          const userId = interaction.user.id;
-          
-          // Create unique claim key for tracking
-          const claimKey = `${userId}-${quizId}`;
-          
-          // Initialize global claim tracker if it doesn't exist
-          if (!global.rewardClaimTracker) {
-            global.rewardClaimTracker = new Set();
-          }
-          
-          // Check if reward has already been claimed
-          if (global.rewardClaimTracker.has(claimKey)) {
-            await interaction.editReply({
-              content: '⚠️ **Already Claimed**\n\nYou have already claimed the reward for this quiz. Each reward can only be claimed once.',
-              ephemeral: true
-            });
-            return;
-          }
-          
-          // Mark as claimed immediately to prevent race conditions
-          global.rewardClaimTracker.add(claimKey);
-          
-          // Immediately disable the button to provide visual feedback
-          const disabledClaimButton = new ButtonBuilder()
-            .setCustomId(`claim-reward-disabled-${quizId}`)
-            .setLabel('✅ Reward Claimed')
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true);
-            
-          const disabledRow = new ActionRowBuilder()
-            .addComponents(disabledClaimButton);
-          
-          // Update the original message to disable the button (best effort)
-          try {
-            await interaction.message.edit({
-              embeds: interaction.message.embeds,
-              components: [disabledRow]
-            });
-          } catch (editError) {
-            console.log('Could not disable button in original message:', editError);
-          }
-          
-          // TODO: Implement actual reward claiming logic
-          // This would involve:
-          // 1. Calculating reward amount based on score
-          // 2. Transferring tokens from escrow to user wallet
-          // 3. Recording reward claim in database
-          
-          await interaction.editReply({
-            content: '🎉 **Reward Claimed!**\n\n💰 Your quiz reward has been processed and will be transferred to your wallet shortly.',
-            ephemeral: true
-          });
-          
-        } catch (error) {
-          console.error('Error handling claim reward:', error);
-          
-          // Remove from tracker if there was an error after adding it
-          const parts = interaction.customId.split('-');
-          const quizId = parts[2];
-          const userId = interaction.user.id;
-          const claimKey = `${userId}-${quizId}`;
-          if (global.rewardClaimTracker) {
-            global.rewardClaimTracker.delete(claimKey);
-          }
-          
-          try {
-            await interaction.editReply({
-              content: '❌ There was an error processing your reward claim. Please try again later.',
-              ephemeral: true
-            });
-          } catch (replyError) {
-            console.error('Failed to send error reply:', replyError);
-          }
-        }
-        return;
-      }
+
       
       // Handle quiz take button (start quiz)
       if (interaction.customId.startsWith('quiz_take:')) {
