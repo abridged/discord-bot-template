@@ -175,7 +175,7 @@ async function handleQuizTake(interaction, quizParams) {
     // Get user's wallet address for tracking
     let userWallet = null;
     try {
-      const { getUserWallet } = require('../account-kit/sdk');
+      const { getUserWallet } = require('../../account-kit/sdk');
       userWallet = await getUserWallet(userId);
       if (userWallet) {
         console.log(`✅ Retrieved wallet for quiz taker ${userId}: ${userWallet}`);
