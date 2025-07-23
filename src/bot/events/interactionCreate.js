@@ -79,9 +79,9 @@ setInterval(() => {
 // Export the event handler
 // Helper function to handle the quiz take process when a user clicks the Take Quiz button
 async function handleQuizTake(interaction, quizParams) {
+  const userId = interaction.user.id;
   try {
     const { url, chainName, fundingAmount } = quizParams;
-    const userId = interaction.user.id;
     
     // Make sure to clear the quiz generation lock when this function exits
     // Using finally block later in this function
@@ -661,20 +661,33 @@ module.exports = {
         const quizParams = global.quizParamsCache.get(uniqueQuizId);
 
         // Check if user is already generating a quiz
-        if (global.quizGenerationInProgress.has(userId)) {
-          await interaction.reply({ 
-            content: '⚠️ You already have a quiz being generated. Please wait for it to complete before starting another one.', 
-            ephemeral: true 
-          });
+        if (global.quizGenerationInProgress && global.quizGenerationInProgress.has(userId)) {
+          try {
+            await interaction.reply({ 
+              content: '⚠️ You already have a quiz being generated. Please wait for it to complete before starting another one.', 
+              ephemeral: true 
+            });
+          } catch (replyError) {
+            console.error('Failed to send duplicate quiz warning:', replyError);
+          }
           return;
         }
         
         if (!quizParams) {
-          await interaction.reply({ 
-            content: 'Quiz configuration was not found. Please try creating a new quiz.', 
-            ephemeral: true 
-          });
+          try {
+            await interaction.reply({ 
+              content: 'Quiz configuration was not found. Please try creating a new quiz.', 
+              ephemeral: true 
+            });
+          } catch (replyError) {
+            console.error('Failed to send quiz config error:', replyError);
+          }
           return;
+        }
+        
+        // Initialize the in-progress set if it doesn't exist
+        if (!global.quizGenerationInProgress) {
+          global.quizGenerationInProgress = new Set();
         }
         
         // Add user to the in-progress set before starting generation
@@ -694,33 +707,33 @@ module.exports = {
         } catch (error) {
           console.error('Error in quiz take handler:', error);
           // Make sure to remove user from in-progress set on error
-          global.quizGenerationInProgress.delete(userId);
+          if (global.quizGenerationInProgress) {
+            global.quizGenerationInProgress.delete(userId);
+          }
           
           // Attempt to notify user of error if we haven't already
-          if (!interaction.replied && !interaction.deferred) {
-            try {
+          try {
+            if (!interaction.replied && !interaction.deferred) {
               await interaction.reply({
                 content: 'There was an error generating your quiz. Please try again later.',
                 ephemeral: true
               });
-              global.responseSent.set(interaction.id, { 
-                responded: true, 
-                timestamp: Date.now() 
+            } else if (interaction.deferred) {
+              await interaction.editReply({
+                content: 'There was an error generating your quiz. Please try again later.',
+                ephemeral: true
               });
-            } catch (replyError) {
-              console.error('Error sending error response:', replyError);
-              // If replying fails, try to send a follow-up message if appropriate
-              try {
-                if (interaction.channel) {
-                  // Send an ephemeral followup message instead of a public channel message
-                  await interaction.followUp({
-                    content: `There was an error processing your quiz. Please try again.`,
-                    ephemeral: true
-                  });
-                }
-              } catch (followupError) {
-                console.error('Failed to send followup error message:', followupError);
-              }
+            }
+          } catch (replyError) {
+            console.error('Error sending error response:', replyError);
+            // If all else fails, try to send a follow-up message
+            try {
+              await interaction.followUp({
+                content: 'There was an error processing your quiz. Please try again.',
+                ephemeral: true
+              });
+            } catch (followupError) {
+              console.error('Failed to send followup error message:', followupError);
             }
           }
         }
@@ -748,8 +761,27 @@ module.exports = {
        * It routes to the dedicated mother quiz handler for MotherFactory integration.
        */
       if (interaction.customId.startsWith('quiz-creation-')) {
-        const { handleMotherQuizSubmission } = require('../handlers/motherQuizHandler');
-        await handleMotherQuizSubmission(interaction);
+        try {
+          const { handleMotherQuizSubmission } = require('../handlers/motherQuizHandler');
+          await handleMotherQuizSubmission(interaction);
+        } catch (error) {
+          console.error('Error in mother quiz submission:', error);
+          try {
+            if (!interaction.replied && !interaction.deferred) {
+              await interaction.reply({
+                content: 'There was an error processing your quiz creation. Please try again later.',
+                ephemeral: true
+              });
+            } else if (interaction.deferred) {
+              await interaction.editReply({
+                content: 'There was an error processing your quiz creation. Please try again later.',
+                ephemeral: true
+              });
+            }
+          } catch (replyError) {
+            console.error('Failed to send error response:', replyError);
+          }
+        }
         return;
       }
       
