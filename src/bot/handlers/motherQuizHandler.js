@@ -197,11 +197,9 @@ async function handleMotherQuizSubmission(interaction) {
     // Create response embed for public message
     const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
     
-    const devModeLabel = process.env.USE_REAL_BLOCKCHAIN === 'true' ? '' : '[DEV MODE] ';
-    
     const embed = new EmbedBuilder()
       .setColor('#4CAF50')
-      .setTitle(`${devModeLabel}Quiz Available!`)
+      .setTitle('Quiz Available!')
       .setDescription(`**${interaction.user.username}** created a new quiz based on this URL:`)
       .addFields(
         { name: 'Source URL', value: quizParams.params.url },
