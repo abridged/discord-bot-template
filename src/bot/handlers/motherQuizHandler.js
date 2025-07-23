@@ -222,7 +222,7 @@ async function handleMotherQuizSubmission(interaction) {
       );
 
     // Send public message with quiz
-    await interaction.editReply({
+    await interaction.followUp({
       embeds: [embed],
       components: [row]
     });
