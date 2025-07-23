@@ -172,16 +172,31 @@ async function handleQuizTake(interaction, quizParams) {
     // Save the quiz state using the unique session ID
     interaction.client.userQuizState.set(sessionId, userQuizState);
     
+    // Get user's wallet address for tracking
+    let userWallet = null;
+    try {
+      const { getUserWallet } = require('../account-kit/sdk');
+      userWallet = await getUserWallet(userId);
+      if (userWallet) {
+        console.log(`✅ Retrieved wallet for quiz taker ${userId}: ${userWallet}`);
+      } else {
+        console.log(`⚠️  No wallet found for quiz taker ${userId}`);
+      }
+    } catch (walletError) {
+      console.log(`⚠️  Wallet retrieval failed for quiz taker ${userId}:`, walletError.message);
+    }
+
     // Record the quiz attempt in the database
     try {
       if (interaction.client.quizDb) {
         await interaction.client.quizDb.QuizAttempt.create({
           userId,
           quizId,
+          userWalletAddress: userWallet,
           attemptedAt: new Date(),
           completed: false
         });
-        console.log(`Quiz attempt recorded for user ${userId} on quiz ${quizId}`);
+        console.log(`Quiz attempt recorded for user ${userId} on quiz ${quizId} with wallet ${userWallet || 'none'}`);
       }
     } catch (error) {
       // Log but continue - this is not critical for quiz functionality
@@ -439,10 +454,25 @@ module.exports = {
             // Record quiz completion
             if (interaction.client.quizDb) {
               try {
+                // Get wallet address from the quiz attempt record
+                let userWallet = null;
+                try {
+                  const attemptRecord = await interaction.client.quizDb.QuizAttempt.findOne({
+                    where: { 
+                      userId: userId,
+                      quizId: activeQuizSession.quizId
+                    }
+                  });
+                  userWallet = attemptRecord ? attemptRecord.userWalletAddress : null;
+                } catch (walletError) {
+                  console.log(`⚠️  Could not retrieve wallet from attempt record:`, walletError.message);
+                }
+
                 // Create quiz completion record
                 await interaction.client.quizDb.QuizCompletion.create({
                   userId: userId,
                   quizId: activeQuizSession.quizId,
+                  userWalletAddress: userWallet,
                   score: score,
                   totalQuestions: totalQuestions,
                   completedAt: new Date()
@@ -458,7 +488,7 @@ module.exports = {
                     }
                   }
                 );
-                console.log(`Quiz attempt marked as completed for user ${userId} on quiz ${activeQuizSession.quizId}`);
+                console.log(`Quiz attempt marked as completed for user ${userId} on quiz ${activeQuizSession.quizId} with wallet ${userWallet || 'none'}`);
               } catch (dbError) {
                 console.error('Error saving quiz completion to database:', dbError);
               }

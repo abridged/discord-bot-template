@@ -22,6 +22,11 @@ module.exports = (sequelize) => {
       allowNull: false,
       comment: 'Unique quiz ID'
     },
+    userWalletAddress: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Wallet address of the user taking the quiz'
+    },
     attemptedAt: {
       type: DataTypes.DATE,
       allowNull: false,
