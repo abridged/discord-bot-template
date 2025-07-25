@@ -219,13 +219,14 @@ async function handleMotherQuizSubmission(interaction) {
           .setEmoji('🧠')
       );
 
-    // Send the quiz message directly to the channel (not as a followUp to avoid "Original message was deleted")
-    await interaction.channel.send({
+    // Send the quiz message using followUp to avoid permission issues
+    await interaction.followUp({
       embeds: [embed],
-      components: [row]
+      components: [row],
+      ephemeral: false
     });
 
-    // Now we can safely delete the original ephemeral message
+    // Delete the original ephemeral processing message
     try {
       await interaction.deleteReply();
     } catch (err) {
