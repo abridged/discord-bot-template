@@ -362,6 +362,8 @@ module.exports = {
         return;
       }
       
+
+      
       // Handle quiz answer buttons
       if (interaction.customId.startsWith('quiz_answer:')) {
         try {
@@ -449,7 +451,13 @@ module.exports = {
               .setDescription(`You've completed the quiz`)
               .addFields(
                 { name: 'Score', value: `${score}/${totalQuestions} (${percentage.toFixed(1)}%)` }
-              );
+              )
+              .setColor(0x00ff00);
+
+            await interaction.editReply({
+              embeds: [completionEmbed],
+              components: [] // Remove all buttons from the previous question
+            });
             
             // Record quiz completion
             if (interaction.client.quizDb) {
@@ -506,22 +514,21 @@ module.exports = {
             // Clean up the session
             quizUtils.cleanupQuizSession(interaction, userId, activeQuizSession.quizId);
             
-            // Show completion message by replacing the previous question
+            // Show completion message
             try {
               await interaction.editReply({
                 embeds: [completionEmbed],
-                components: [] // Remove all buttons from the previous question
+                components: [] // No buttons
               });
             } catch (completionError) {
               console.log('Failed to show quiz completion, interaction may have expired:', completionError);
               
-              // Try to send a new message if we can't edit the reply
+              // Try to send a new message if we can't edit reply
               if (interaction.channel) {
                 await interaction.channel.send({
                   content: 'Your quiz is now complete!',
                   embeds: [completionEmbed],
-                  components: [], // Remove all buttons
-                  ephemeral: true
+                  components: [] // No buttons
                 });
               }
             }
@@ -722,6 +729,8 @@ module.exports = {
         }
         return;
       }
+      
+
       
       // Handle poll creation modal
       if (interaction.customId.startsWith('poll-creation-')) {

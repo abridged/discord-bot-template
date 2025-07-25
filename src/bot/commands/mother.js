@@ -23,16 +23,17 @@ module.exports = {
   // Command definition using SlashCommandBuilder
   data: new SlashCommandBuilder()
     .setName('mother')
-    .setDescription('Multi-purpose bot command with different functionalities')
+    .setDescription('Create quizzes from URLs with blockchain integration')
     .addStringOption(option =>
       option
         .setName('action')
         .setDescription('Choose what action to perform')
         .setRequired(true)
         .addChoices(
-          { name: '📊 poll', value: 'poll' },
-          { name: '❓ quiz', value: 'quiz' },
-          { name: '💬 text', value: 'text' }
+          { name: '❓ quiz', value: 'quiz' }
+          // Hidden options - uncomment to enable:
+          // { name: '📊 poll', value: 'poll' },
+          // { name: '💬 text', value: 'text' }
         )
     ),
   
