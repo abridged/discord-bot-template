@@ -34,7 +34,8 @@ class QuizEscrowFactory {
  */
 async function createQuizEscrow(params, signer) {
   // Return mock data to maintain API compatibility
-  const quizId = params.quizId || `quiz_${Date.now()}`;
+  const { v4: uuidv4 } = require('uuid');
+  const quizId = params.quizId || uuidv4();
   
   return {
     address: `0x${Math.random().toString(16).substring(2, 42).padStart(40, '0')}`,

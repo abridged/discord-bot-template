@@ -138,11 +138,9 @@ async function handleMotherQuizSubmission(interaction) {
     }
 
     // Proceed with quiz creation
-    // Generate quiz IDs
-    const crypto = require('crypto');
-    const creationTime = Date.now();
-    const urlHash = crypto.createHash('md5').update(quizParams.params.url).digest('hex').substring(0, 10);
-    const uniqueQuizId = `${urlHash}_${creationTime}`;
+    // Generate quiz IDs using UUIDs for PostgreSQL compatibility
+    const { v4: uuidv4 } = require('uuid');
+    const uniqueQuizId = uuidv4();
     const quizId = quizParams.params.url; // For backward compatibility
 
     // Store quiz parameters in global cache for "Take Quiz" button
