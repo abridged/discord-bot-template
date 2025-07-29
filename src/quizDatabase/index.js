@@ -8,14 +8,17 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir);
 }
 
-// Create a separate database for quiz tracking
-const quizDbConfig = {
-  dialect: 'sqlite',
-  storage: path.join(process.cwd(), 'db', 'quiz_tracking.sqlite'),
-  logging: process.env.NODE_ENV === 'development' ? console.log : false
-};
+// Use the main PostgreSQL database for quiz tracking
+const config = require('../database/config/config.js');
+const env = process.env.NODE_ENV || 'development';
+let quizDbConfig = config[env];
 
-// Create Sequelize instance for quiz tracking
+// Handle DATABASE_URL for production
+if (env === 'production' && process.env.DATABASE_URL) {
+  quizDbConfig = process.env.DATABASE_URL;
+}
+
+// Create Sequelize instance for quiz tracking using PostgreSQL
 const quizSequelize = new Sequelize(quizDbConfig);
 
 // Initialize quiz database connection

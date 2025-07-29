@@ -5,7 +5,12 @@ const path = require('path');
 
 // Get the configuration based on the environment
 const env = process.env.NODE_ENV || 'development';
-const dbConfig = config[env];
+let dbConfig = config[env];
+
+// Handle DATABASE_URL for production
+if (env === 'production' && process.env.DATABASE_URL) {
+  dbConfig = process.env.DATABASE_URL;
+}
 
 // Create Sequelize instance
 const sequelize = new Sequelize(dbConfig);

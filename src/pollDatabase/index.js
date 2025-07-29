@@ -8,14 +8,17 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir);
 }
 
-// Create a database for poll tracking
-const pollDbConfig = {
-  dialect: 'sqlite',
-  storage: path.join(process.cwd(), 'db', 'poll_tracking.sqlite'),
-  logging: process.env.NODE_ENV === 'development' ? console.log : false
-};
+// Use the main PostgreSQL database for poll tracking
+const config = require('../database/config/config.js');
+const env = process.env.NODE_ENV || 'development';
+let pollDbConfig = config[env];
 
-// Create Sequelize instance for poll tracking
+// Handle DATABASE_URL for production
+if (env === 'production' && process.env.DATABASE_URL) {
+  pollDbConfig = process.env.DATABASE_URL;
+}
+
+// Create Sequelize instance for poll tracking using PostgreSQL
 const pollSequelize = new Sequelize(pollDbConfig);
 
 // Initialize poll database connection
