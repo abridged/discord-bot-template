@@ -5,11 +5,18 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "dev:full": "npm run db:start && npm run dev",
+    "dev:docker": "docker-compose up -d postgres && npm run dev",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "setup:db": "node setup-database.js",
     "reset:db": "node reset-database.js",
+    "db:start": "docker-compose up -d postgres",
+    "db:stop": "docker-compose down",
+    "db:restart": "docker-compose restart postgres",
+    "db:logs": "docker-compose logs -f postgres",
+    "db:reset": "docker-compose down -v && docker-compose up -d postgres",
     "tunnel": "node -e \"const domain = require('dotenv').config().parsed.NGROK_DOMAIN; console.log(`Starting direct ngrok tunnel to ${domain}...`); require('child_process').spawn('npx', ['ngrok', 'http', '--hostname=' + domain, '3000'], {stdio: 'inherit'});\""
   },
   "dependencies": {
