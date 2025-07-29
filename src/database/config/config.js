@@ -12,8 +12,21 @@ module.exports = {
     logging: false,
   },
   production: {
-    dialect: 'sqlite',
-    storage: './db/database.sqlite',
+    // Use PostgreSQL for Railway production
+    use_env_variable: 'DATABASE_URL',
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false // Railway PostgreSQL requires SSL
+      }
+    },
     logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
   },
 };
