@@ -30,7 +30,7 @@ module.exports = {
         .setDescription('Choose what action to perform')
         .setRequired(true)
         .addChoices(
-          { name: '❓ quiz', value: 'quiz' }
+          { name: 'Gaia quizbot', value: 'quiz' }
           // Hidden options - uncomment to enable:
           // { name: '📊 poll', value: 'poll' },
           // { name: '💬 text', value: 'text' }
