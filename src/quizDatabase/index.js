@@ -13,8 +13,8 @@ const config = require('../database/config/config.js');
 const env = process.env.NODE_ENV || 'development';
 let quizDbConfig = config[env];
 
-// Handle DATABASE_URL for production
-if (env === 'production' && process.env.DATABASE_URL) {
+// Handle DATABASE_URL for any environment that has it
+if (process.env.DATABASE_URL) {
   quizDbConfig = process.env.DATABASE_URL;
 }
 

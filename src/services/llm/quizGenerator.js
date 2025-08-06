@@ -197,24 +197,46 @@ function standardizeQuestions(questions) {
         return strOption.length > 80 ? strOption.substring(0, 77) + '...' : strOption;
       });
     
-    // Add 'All of the above' and 'None of the above' as options 4 and 5
-    sanitizedOptions.push('All of the above');
-    sanitizedOptions.push('None of the above');
-    
     // Validate the correct answer index
-    let correctIndex = q.correctOptionIndex;
-    if (correctIndex === undefined || isNaN(correctIndex) || correctIndex >= 3) {
+    let originalCorrectIndex = q.correctOptionIndex;
+    if (originalCorrectIndex === undefined || isNaN(originalCorrectIndex) || originalCorrectIndex >= 3) {
       // Default to first option if invalid index
-      correctIndex = 0;
+      originalCorrectIndex = 0;
       console.warn(`Invalid correct answer index for question "${questionText.substring(0, 30)}...", defaulting to 0`);
     }
     
-    // Return the standardized question with unified property names and 5 options
+    // RANDOMIZE the correct answer position to prevent always having the first choice correct
+    // Create a hash based on question content to ensure consistent randomization for the same question
+    const questionHash = questionText.split('').reduce((hash, char) => {
+      return ((hash << 5) - hash + char.charCodeAt(0)) & 0xfffffff;
+    }, 0);
+    
+    // Generate a random position (0, 1, or 2) based on the question hash
+    const randomPosition = Math.abs(questionHash) % 3;
+    
+    // Store the correct answer before shuffling
+    const correctAnswer = sanitizedOptions[originalCorrectIndex];
+    
+    // Create a new options array with the correct answer at the random position
+    const shuffledOptions = [...sanitizedOptions];
+    
+    // Move the correct answer to the random position
+    // First, remove the correct answer from its original position
+    shuffledOptions.splice(originalCorrectIndex, 1);
+    
+    // Then insert it at the random position
+    shuffledOptions.splice(randomPosition, 0, correctAnswer);
+    
+    // Add 'All of the above' and 'None of the above' as options 4 and 5
+    shuffledOptions.push('All of the above');
+    shuffledOptions.push('None of the above');
+    
+    // Return the standardized question with unified property names and randomized options
     return {
       questionText: questionText,
       question: questionText, // Include both property names for compatibility
-      options: sanitizedOptions,
-      correctOptionIndex: correctIndex
+      options: shuffledOptions,
+      correctOptionIndex: randomPosition
     };
   });
 }

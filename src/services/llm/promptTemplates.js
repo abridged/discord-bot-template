@@ -43,7 +43,7 @@ For each question:
 3. EXTREMELY IMPORTANT: Each answer option MUST be less than 80 characters in length to fit within Discord UI buttons
 4. Keep all answer options SHORT and CONCISE - ideally 40-60 characters maximum
 5. DO NOT use generic placeholders like "Option A" or "Option B" - each option must be a complete, meaningful answer
-6. Identify which option is correct (as an index number, either 0, 1, or 2)
+6. Identify which option is correct (as an index number, either 0, 1, or 2) - VARY the correct answer position across questions to avoid patterns
 7. Make sure options are distinct from each other and factually accurate based on the source content
 8. DO NOT include "All of the above" or "None of the above" as options - only create 3 unique, specific answer choices
 9. Use short, clear phrases rather than complete sentences for answer options when possible
@@ -56,6 +56,11 @@ Format your response as a JSON array:
   {
     "question": "Question text goes here?",
     "options": ["First option", "Second option", "Third option"],
+    "correctOptionIndex": 1
+  },
+  {
+    "question": "Another question here?",
+    "options": ["Option one", "Option two", "Option three"],
     "correctOptionIndex": 0
   }
 ]

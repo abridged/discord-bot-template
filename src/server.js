@@ -36,6 +36,179 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Quiz Completion Results endpoint
+app.get('/api/quiz-completions', async (req, res) => {
+  try {
+    console.log('Starting quiz completions API call...');
+    
+    // Use the quiz tracking database instead of the main database
+    const { setupModels } = require('./quizDatabase');
+    const quizDb = await setupModels();
+    
+    // Get all quiz completions from the correct table
+    const completions = await quizDb.QuizCompletion.findAll({
+      include: [
+        {
+          model: quizDb.QuizAnswer,
+          as: 'answers',
+          required: false
+        }
+      ],
+      order: [['completedAt', 'DESC']]
+    });
+
+    console.log(`Found ${completions.length} quiz completions`);
+
+    if (completions.length === 0) {
+      return res.json({
+        success: true,
+        count: 0,
+        completions: [],
+        message: 'No quiz completions found.',
+        debug: {
+          totalCompletions: 0
+        }
+      });
+    }
+
+    // Format the response data as CSV
+    const csvHeader = 'userId,quizId,timestamp,score,totalQuestions,scorePercentage\n';
+    
+    const csvRows = completions.map(completion => {
+      const scorePercentage = completion.totalQuestions > 0 ? 
+        Math.round((completion.score / completion.totalQuestions) * 100) : 0;
+      
+      return [
+        completion.userId,
+        completion.quizId,
+        completion.completedAt,
+        completion.score,
+        completion.totalQuestions,
+        scorePercentage
+      ].join(',');
+    });
+
+    const csvContent = csvHeader + csvRows.join('\n');
+
+    // Set CSV response headers
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="quiz-completions.csv"');
+    res.send(csvContent);
+
+  } catch (error) {
+    console.error('Quiz Completions API Error:', error);
+    console.error('Full error stack:', error.stack);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch quiz completions',
+      message: error.message
+    });
+  }
+});
+
+// User Quiz Summary endpoint
+app.get('/api/user-quiz-summary', async (req, res) => {
+  try {
+    console.log('Starting user quiz summary API call...');
+    
+    // Use the quiz tracking database
+    const { setupModels } = require('./quizDatabase');
+    const quizDb = await setupModels();
+    
+    // Get all quiz completions to aggregate by user
+    const completions = await quizDb.QuizCompletion.findAll({
+      order: [['completedAt', 'DESC']]
+    });
+
+    console.log(`Found ${completions.length} quiz completions for user summary`);
+
+    if (completions.length === 0) {
+      return res.json({
+        success: true,
+        count: 0,
+        users: [],
+        message: 'No user quiz data found.',
+        debug: {
+          totalCompletions: 0
+        }
+      });
+    }
+
+    // Aggregate by user
+    const userStatsMap = new Map();
+    
+    for (const completion of completions) {
+      const userId = completion.userId;
+      
+      if (!userStatsMap.has(userId)) {
+        userStatsMap.set(userId, {
+          userId,
+          quizzesCompleted: 0,
+          totalScore: 0,
+          totalQuestions: 0,
+          lastActivity: completion.completedAt
+        });
+      }
+      
+      const userStats = userStatsMap.get(userId);
+      
+      // Update stats
+      userStats.quizzesCompleted++;
+      userStats.totalScore += completion.score;
+      userStats.totalQuestions += completion.totalQuestions;
+      
+      // Update last activity
+      if (completion.completedAt > userStats.lastActivity) {
+        userStats.lastActivity = completion.completedAt;
+      }
+    }
+
+    console.log(`Processed stats for ${userStatsMap.size} users`);
+
+    // Format the response data as CSV
+    const csvHeader = 'userId,quizzesCompleted,totalScore,totalQuestions,overallAccuracy,lastActivity\n';
+    
+    const sortedUsers = Array.from(userStatsMap.values()).sort((a, b) => {
+      // Sort by quizzes completed, then by total score
+      if (a.quizzesCompleted !== b.quizzesCompleted) {
+        return b.quizzesCompleted - a.quizzesCompleted;
+      }
+      return b.totalScore - a.totalScore;
+    });
+    
+    const csvRows = sortedUsers.map(userStats => {
+      const overallAccuracy = userStats.totalQuestions > 0 
+        ? Math.round((userStats.totalScore / userStats.totalQuestions) * 100 * 100) / 100 
+        : 0;
+      
+      return [
+        userStats.userId,
+        userStats.quizzesCompleted,
+        userStats.totalScore,
+        userStats.totalQuestions,
+        overallAccuracy,
+        userStats.lastActivity
+      ].join(',');
+    });
+
+    const csvContent = csvHeader + csvRows.join('\n');
+
+    // Set CSV response headers
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="user-quiz-summary.csv"');
+    res.send(csvContent);
+
+  } catch (error) {
+    console.error('User Quiz Summary API Error:', error);
+    console.error('Full error stack:', error.stack);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch user quiz summary',
+      message: error.message
+    });
+  }
+});
+
 // CSV Export endpoint
 app.get('/api/export/csv', async (req, res) => {
   try {
