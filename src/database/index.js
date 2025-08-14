@@ -46,7 +46,7 @@ const initializeDatabase = async () => {
     // Run migrations
     console.log('Running database migrations...');
     try {
-      await sequelize.sync();
+      await sequelize.sync({ alter: true });
       console.log('Database migrations completed successfully');
     } catch (migrationError) {
       console.error('Error running migrations:', migrationError);

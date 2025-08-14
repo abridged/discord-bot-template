@@ -192,6 +192,7 @@ async function handleQuizTake(interaction, quizParams) {
         await interaction.client.quizDb.QuizAttempt.create({
           userId,
           quizId,
+          guildId: interaction.guildId || null,
           userWalletAddress: userWallet,
           attemptedAt: new Date(),
           completed: false
@@ -480,6 +481,7 @@ module.exports = {
                 await interaction.client.quizDb.QuizCompletion.create({
                   userId: userId,
                   quizId: activeQuizSession.quizId,
+                  guildId: interaction.guildId || null,
                   userWalletAddress: userWallet,
                   score: score,
                   totalQuestions: totalQuestions,

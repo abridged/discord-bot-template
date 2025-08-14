@@ -38,6 +38,7 @@ class DatabaseQuizRepository extends IQuizRepository {
       const quiz = await this.models.Quiz.create({
         creatorDiscordId: quizData.creatorDiscordId,
         creatorWalletAddress: quizData.creatorWalletAddress || null,
+        guildId: quizData.guildId || null,
         sourceUrl: quizData.sourceUrl,
         difficulty: quizData.difficulty,
         questionCount: quizData.questions ? quizData.questions.length : 0,
@@ -77,6 +78,7 @@ class DatabaseQuizRepository extends IQuizRepository {
             options: question.options || [],
             correctOptionIndex: question.correctOptionIndex !== undefined ? question.correctOptionIndex : 0,
             quizId: quiz.id,
+            guildId: quizData.guildId || null,
             order: index
           };
         });
@@ -171,6 +173,9 @@ class DatabaseQuizRepository extends IQuizRepository {
       if (filters.creatorDiscordId) {
         where.creatorDiscordId = filters.creatorDiscordId;
       }
+      if (filters.guildId) {
+        where.guildId = filters.guildId;
+      }
       
       if (filters.active === true) {
         where.expiresAt = {
@@ -205,6 +210,7 @@ class DatabaseQuizRepository extends IQuizRepository {
     try {
       const question = await this.models.Question.create({
         quizId: questionData.quizId,
+        guildId: questionData.guildId || null,
         questionText: questionData.questionText,
         correctOptionIndex: questionData.correctOptionIndex,
         options: questionData.options,
@@ -267,6 +273,7 @@ class DatabaseQuizRepository extends IQuizRepository {
       const answer = await this.models.Answer.create({
         quizId: answerData.quizId,
         questionId: answerData.questionId,
+        guildId: answerData.guildId || null,
         userDiscordId: answerData.userDiscordId,
         userWalletAddress: answerData.userWalletAddress || null,
         selectedOptionIndex: answerData.selectedOptionIndex,
@@ -302,6 +309,9 @@ class DatabaseQuizRepository extends IQuizRepository {
       if (filters.userDiscordId) {
         where.userDiscordId = filters.userDiscordId;
       }
+      if (filters.guildId) {
+        where.guildId = filters.guildId;
+      }
 
       const answers = await this.models.Answer.findAll({
         where,
@@ -331,6 +341,7 @@ class DatabaseQuizRepository extends IQuizRepository {
   async getLeaderboard(options = {}) {
     try {
       const currentTime = new Date();
+      const whereGuild = options.guildId ? 'WHERE quizzes.guildId = :guildId' : '';
       
       // Using raw SQL query with Sequelize to get participation stats for ALL quizzes
       // but only score metrics for expired quizzes
@@ -362,12 +373,13 @@ class DatabaseQuizRepository extends IQuizRepository {
           MAX(answers.answeredAt) as lastActive
         FROM answers
         JOIN quizzes ON answers.quizId = quizzes.id
-        GROUP BY answers.userDiscordId
+        ${whereGuild}
+        GROUP BY answers.userDiscordId, answers.userWalletAddress
         ORDER BY ${options.orderBy || 'correctAnswers'} DESC
         LIMIT ${options.limit || 20}
         OFFSET ${options.offset || 0}
       `, {
-        replacements: { currentTime }
+        replacements: { currentTime, guildId: options.guildId }
       });
 
       return leaderboardEntries;
@@ -382,9 +394,10 @@ class DatabaseQuizRepository extends IQuizRepository {
    * @param {string} userDiscordId - Discord user ID
    * @returns {Promise<Object>} - User stats
    */
-  async getUserStats(userDiscordId) {
+  async getUserStats(userDiscordId, options = {}) {
     try {
       const currentTime = new Date();
+      const andGuild = options.guildId ? ' AND quizzes.guildId = :guildId' : '';
       
       // Using raw SQL query with Sequelize to get user stats
       // Show participation for all quizzes but scores only for expired ones
@@ -416,10 +429,10 @@ class DatabaseQuizRepository extends IQuizRepository {
           MAX(answers.answeredAt) as lastActive
         FROM answers
         JOIN quizzes ON answers.quizId = quizzes.id
-        WHERE answers.userDiscordId = :userDiscordId
+        WHERE answers.userDiscordId = :userDiscordId${andGuild}
         GROUP BY answers.userDiscordId
       `, {
-        replacements: { userDiscordId, currentTime }
+        replacements: { userDiscordId, currentTime, guildId: options.guildId }
       });
 
       return userStats && userStats[0] ? userStats[0] : null;

@@ -286,6 +286,11 @@ async function saveAnswer(answerData) {
     }
 
     // Save answer to database
+    // Attach guildId if available in quiz record and missing in payload
+    if (!answerData.guildId && quiz) {
+      answerData.guildId = quiz.guildId || null;
+    }
+
     const answerId = await quizRepository.saveAnswer(answerData);
 
     console.log(`Answer saved with ID ${answerId}`);

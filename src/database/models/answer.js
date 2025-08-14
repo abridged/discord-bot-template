@@ -17,6 +17,11 @@ module.exports = (sequelize) => {
   }
   
   Answer.init({
+    guildId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Discord guild/server ID for multi-tenant segregation'
+    },
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -109,7 +114,8 @@ module.exports = (sequelize) => {
       {
         unique: true,
         fields: ['questionId', 'userDiscordId']
-      }
+      },
+      { fields: ['guildId'] }
     ]
   });
   

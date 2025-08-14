@@ -403,32 +403,47 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start the server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔗 API Status: http://localhost:${PORT}/api/status`);
-});
+// Start the server only when not running in serverless environments (e.g., Vercel)
+let server = null;
+if (!process.env.VERCEL && process.env.SERVERLESS !== 'true') {
+  server = app.listen(PORT, () => {
+    console.log(`🚀 Backend server running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔗 API Status: http://localhost:${PORT}/api/status`);
+  });
 
-// Start Discord bot
-console.log('🤖 Starting Discord bot...');
-require('./bot/index.js');
+  // Start Discord bot unless explicitly disabled
+  if (process.env.RUN_BOT !== 'false') {
+    console.log('🤖 Starting Discord bot...');
+    require('./bot/index.js');
+  } else {
+    console.log('🤖 Discord bot startup skipped (RUN_BOT=false)');
+  }
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
+  if (server) {
+    server.close(() => {
+      console.log('Process terminated');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
+  if (server) {
+    server.close(() => {
+      console.log('Process terminated');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 module.exports = app;

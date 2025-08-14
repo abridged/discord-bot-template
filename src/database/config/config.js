@@ -17,20 +17,20 @@ module.exports = {
     logging: false,
   },
   production: {
-    // Use PostgreSQL for Railway production
+    // Use PostgreSQL (Supabase) in production
     use_env_variable: 'DATABASE_URL',
     dialect: 'postgres',
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false // Railway PostgreSQL requires SSL
+        rejectUnauthorized: false
       }
     },
     logging: false,
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
-      acquire: 30000,
+      acquire: 60000,
       idle: 10000
     }
   },

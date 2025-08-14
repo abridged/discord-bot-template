@@ -2,6 +2,11 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
   const QuizCompletion = sequelize.define('QuizCompletion', {
+    guildId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Discord guild/server ID where the quiz was taken'
+    },
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -46,7 +51,8 @@ module.exports = (sequelize) => {
         unique: true,
         fields: ['userId', 'quizId'],
         name: 'unique_user_quiz_completion'
-      }
+      },
+      { fields: ['guildId'] }
     ]
   });
 

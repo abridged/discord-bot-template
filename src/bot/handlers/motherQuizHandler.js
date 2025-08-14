@@ -162,6 +162,7 @@ async function handleMotherQuizSubmission(interaction) {
         quizId: uniqueQuizId,
         creator: interaction.user.id,
         creatorDiscordId: interaction.user.id,
+        guildId: interaction.guildId || null,
         creatorWalletAddress: userWallet,
         sourceUrl: quizParams.params.url,
         url: quizParams.params.url,

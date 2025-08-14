@@ -2,6 +2,11 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
   const QuizAnswer = sequelize.define('QuizAnswer', {
+    guildId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Discord guild/server ID for the quiz context'
+    },
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,

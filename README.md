@@ -134,10 +134,34 @@ Once you've completed the setup process above, use these commands to quickly sta
 3. Start the bot: `npm run bot:dev`
 4. Start the web interface: `npm run dev`
 
+## Deployment (Heroku)
+
+1. Set Config Vars:
+   - `DATABASE_URL` (Supabase Postgres URL with `sslmode=require`)
+   - `DISCORD_TOKEN`
+   - `NODE_ENV=production`
+   - `RUN_BOT=true`
+
+2. Deploy
+   ```bash
+   heroku create your-app
+   heroku stack:set heroku-22
+   heroku buildpacks:add heroku/nodejs
+   heroku config:set DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB?sslmode=require"
+   heroku config:set DISCORD_TOKEN=... NODE_ENV=production RUN_BOT=true
+   git push heroku HEAD:main
+   ```
+
+3. Verify
+   ```bash
+   heroku logs -t
+   curl https://your-app.herokuapp.com/health
+   ```
+
 ## Features
 
 - Discord.js v14 integration
-- Next.js web dashboard
+- Express HTTP API
 - ngrok for secure tunneling
 - Ready for Collab.Land Account Kit integration
 

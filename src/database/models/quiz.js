@@ -19,6 +19,11 @@ module.exports = (sequelize) => {
   }
   
   Quiz.init({
+    guildId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Discord guild/server ID this quiz belongs to'
+    },
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -157,7 +162,10 @@ module.exports = (sequelize) => {
     sequelize,
     modelName: 'Quiz',
     tableName: 'quizzes',
-    timestamps: true
+    timestamps: true,
+    indexes: [
+      { fields: ['guildId'] }
+    ]
   });
   
   return Quiz;

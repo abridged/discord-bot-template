@@ -64,7 +64,7 @@ const setupModels = async () => {
   
   // Sync the database (create tables if they don't exist)
   try {
-    await quizSequelize.sync();
+    await quizSequelize.sync({ alter: true });
     console.log('Quiz tracking database synchronized successfully');
   } catch (error) {
     console.error('Error synchronizing quiz tracking database:', error);

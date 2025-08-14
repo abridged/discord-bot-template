@@ -19,6 +19,9 @@
     "db:reset": "docker-compose down -v && docker-compose up -d postgres",
     "tunnel": "node -e \"const domain = require('dotenv').config().parsed.NGROK_DOMAIN; console.log(`Starting direct ngrok tunnel to ${domain}...`); require('child_process').spawn('npx', ['ngrok', 'http', '--hostname=' + domain, '3000'], {stdio: 'inherit'});\""
   },
+  "engines": {
+    "node": ">=18.x"
+  },
   "dependencies": {
     "@collabland/accountkit-sdk": "^0.2.0",
     "@mozilla/readability": "^0.6.0",
