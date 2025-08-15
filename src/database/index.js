@@ -1,3 +1,4 @@
+require('./pg-ssl');
 const { Sequelize } = require('sequelize');
 const config = require('./config/config.js');
 const fs = require('fs');

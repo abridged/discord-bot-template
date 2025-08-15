@@ -1,3 +1,4 @@
+require('../database/pg-ssl');
 const { Sequelize } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
