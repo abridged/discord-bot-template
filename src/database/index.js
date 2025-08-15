@@ -14,6 +14,8 @@ const useUrl = (env === 'production') && !!process.env.DATABASE_URL;
 const sequelize = useUrl
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
+      protocol: 'postgres',
+      ssl: true,
       dialectOptions: {
         ssl: { require: true, rejectUnauthorized: false }
       },

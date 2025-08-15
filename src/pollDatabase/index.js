@@ -20,6 +20,8 @@ const useUrl = !!process.env.DATABASE_URL;
 const pollSequelize = useUrl
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
+      protocol: 'postgres',
+      ssl: true,
       dialectOptions: {
         ssl: { require: true, rejectUnauthorized: false }
       },
