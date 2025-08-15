@@ -16,9 +16,8 @@ const defaultTemperature = parseFloat(process.env.OPENAI_TEMPERATURE || '0.7');
  */
 function checkOpenAIConfig() {
   const apiKey = process.env.OPENAI_API_KEY || '';
-  
   if (!apiKey) {
-    throw new Error('OpenAI API not configured. Set OPENAI_API_KEY in environment.');
+    console.warn('OPENAI_API_KEY not set. Falling back to demo/mock questions.');
   }
 }
 
@@ -42,10 +41,6 @@ async function generateQuestionsFromContent(contentObj, options = {}) {
   // Get OpenAI client - will throw error if not configured
   const { initializeOpenAIClient } = require('./openaiClient');
   const openai = initializeOpenAIClient();
-  
-  if (!openai) {
-    throw new Error('OpenAI client not available. Please check your API key configuration.');
-  }
   
   console.log('Using OpenAI for quiz generation');
   // Use the promptTemplates module imported at the top level

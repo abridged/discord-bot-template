@@ -12,8 +12,8 @@ const OpenAI = require('openai');
 function initializeOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY || '';
   
-  // Check if we're in demo/test mode
-  const isDemoMode = process.env.OPENAI_DEMO_MODE === 'true' || !apiKey;
+  // Demo mode ONLY when no API key is configured. If a key exists, never mock.
+  const isDemoMode = !apiKey;
   
   if (isDemoMode) {
     console.log('WARNING: Using DEMO MODE for OpenAI - quiz answers will be mock data');
