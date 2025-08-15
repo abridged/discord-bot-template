@@ -13,13 +13,19 @@ const config = require('../database/config/config.js');
 const env = process.env.NODE_ENV || 'development';
 let pollDbConfig = config[env];
 
-// Handle DATABASE_URL for production
-if (env === 'production' && process.env.DATABASE_URL) {
-  pollDbConfig = process.env.DATABASE_URL;
-}
+// Prefer DATABASE_URL when available (Heroku/Supabase)
+const useUrl = !!process.env.DATABASE_URL;
 
 // Create Sequelize instance for poll tracking using PostgreSQL
-const pollSequelize = new Sequelize(pollDbConfig);
+const pollSequelize = useUrl
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: { require: true, rejectUnauthorized: false }
+      },
+      logging: false
+    })
+  : new Sequelize(pollDbConfig);
 
 // Initialize poll database connection
 const initializePollDatabase = async () => {

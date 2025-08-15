@@ -13,13 +13,19 @@ const config = require('../database/config/config.js');
 const env = process.env.NODE_ENV || 'development';
 let quizDbConfig = config[env];
 
-// Handle DATABASE_URL for any environment that has it
-if (process.env.DATABASE_URL) {
-  quizDbConfig = process.env.DATABASE_URL;
-}
+// Prefer DATABASE_URL when present (Heroku/Supabase)
+const useUrl = !!process.env.DATABASE_URL;
 
 // Create Sequelize instance for quiz tracking using PostgreSQL
-const quizSequelize = new Sequelize(quizDbConfig);
+const quizSequelize = useUrl
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: { require: true, rejectUnauthorized: false }
+      },
+      logging: false
+    })
+  : new Sequelize(quizDbConfig);
 
 // Initialize quiz database connection
 const initializeQuizDatabase = async () => {

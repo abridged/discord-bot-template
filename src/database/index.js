@@ -7,13 +7,19 @@ const path = require('path');
 const env = process.env.NODE_ENV || 'development';
 let dbConfig = config[env];
 
-// Handle DATABASE_URL for production
-if (env === 'production' && process.env.DATABASE_URL) {
-  dbConfig = process.env.DATABASE_URL;
-}
+// Prefer DATABASE_URL in production
+const useUrl = (env === 'production') && !!process.env.DATABASE_URL;
 
-// Create Sequelize instance
-const sequelize = new Sequelize(dbConfig);
+// Create Sequelize instance with SSL when using URL (Heroku/Supabase)
+const sequelize = useUrl
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: { require: true, rejectUnauthorized: false }
+      },
+      logging: false
+    })
+  : new Sequelize(dbConfig);
 
 // Load models
 const db = {};

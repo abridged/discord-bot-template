@@ -24,13 +24,12 @@ const logCommandRegistration = (commandName, commandData) => {
 };
 
 // Create a new client instance
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+const baseIntents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages];
+const enableMessageContent = (process.env.DISCORD_ENABLE_MESSAGE_CONTENT || 'true') === 'true';
+if (enableMessageContent) {
+  baseIntents.push(GatewayIntentBits.MessageContent);
+}
+const client = new Client({ intents: baseIntents });
 
 // Command collection
 client.commands = new Collection();
