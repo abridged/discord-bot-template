@@ -83,6 +83,8 @@ for (const file of eventFiles) {
 
 // Initialize database and storage services
 Promise.all([
+  // Ensure primary DB schema exists before anything uses it
+  initializeDatabase(),
   initializeStorage(),
   initializeQuizDatabase(),
   initializePollTracking(),
@@ -95,7 +97,15 @@ Promise.all([
       pollDbSuccess,
       walletMappingSuccess,
     ]) => {
-      if (storageSuccess) {
+      // storageSuccess here is actually the result of initializeDatabase due to array order
+      const dbInitSuccess = storageSuccess;
+      if (dbInitSuccess) {
+        console.log("Main database connection and sync successful");
+      } else {
+        console.warn("Main database initialization failed; features depending on it may not work");
+      }
+
+      if (quizDbSuccess) {
         console.log("Storage service initialized successfully");
       } else {
         console.warn(
