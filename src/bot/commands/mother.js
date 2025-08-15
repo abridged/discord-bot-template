@@ -22,7 +22,7 @@ const TEXT_CONFIG = {
 module.exports = {
   // Command definition using SlashCommandBuilder
   data: new SlashCommandBuilder()
-    .setName('mother')
+    .setName('acequiz')
     .setDescription('Create quizzes from URLs with blockchain integration')
     .addStringOption(option =>
       option
@@ -30,7 +30,7 @@ module.exports = {
         .setDescription('Choose what action to perform')
         .setRequired(true)
         .addChoices(
-          { name: 'Gaia Quizbot', value: 'quiz' }
+          { name: 'Ace Quiz Agent', value: 'quiz' }
           // Hidden options - uncomment to enable:
           // { name: '📊 poll', value: 'poll' },
           // { name: '💬 text', value: 'text' }
@@ -156,7 +156,7 @@ module.exports = {
   async execute(interaction) {
     try {
       const action = interaction.options.getString('action');
-      console.log(`/mother command executed with action: ${action} by user: ${interaction.user.tag}`);
+      console.log(`/acequiz command executed with action: ${action} by user: ${interaction.user.tag}`);
 
       // Trigger background wallet lookup for user
       backgroundWalletLookup(interaction.user.id).catch(error => {
