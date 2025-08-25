@@ -14,12 +14,13 @@ const config = require('../database/config/config.js');
 const env = process.env.NODE_ENV || 'development';
 let quizDbConfig = config[env];
 
-// Prefer DATABASE_URL when present (Heroku/Supabase)
-const useUrl = !!process.env.DATABASE_URL;
+// Prefer QUIZ_DATABASE_URL, then DATABASE_URL (Heroku/Supabase)
+const connectionUrl = process.env.QUIZ_DATABASE_URL || process.env.DATABASE_URL || '';
+const useUrl = !!connectionUrl;
 
 // Create Sequelize instance for quiz tracking using PostgreSQL
 const quizSequelize = useUrl
-  ? new Sequelize(process.env.DATABASE_URL, {
+  ? new Sequelize(connectionUrl, {
       dialect: 'postgres',
       protocol: 'postgres',
       ssl: true,
@@ -34,10 +35,10 @@ const quizSequelize = useUrl
 const initializeQuizDatabase = async () => {
   try {
     await quizSequelize.authenticate();
-    console.log('Quiz tracking database connection has been established successfully.');
+    console.log('[QuizDB] Connected:', useUrl ? 'URL' : `${quizDbConfig.host}/${quizDbConfig.database}`);
     return true;
   } catch (error) {
-    console.error('Unable to connect to the quiz tracking database:', error);
+    console.error('[QuizDB] Unable to connect:', error.message);
     return false;
   }
 };
@@ -50,10 +51,12 @@ const setupModels = async () => {
   const QuizCompletion = require('./models/QuizCompletion')(quizSequelize);
   const QuizAnswer = require('./models/QuizAnswer')(quizSequelize);
   const QuizAttempt = require('./models/QuizAttempt')(quizSequelize);
+  const MembershipRegistration = require('./models/MembershipRegistration')(quizSequelize);
   
   db.QuizCompletion = QuizCompletion;
   db.QuizAnswer = QuizAnswer;
   db.QuizAttempt = QuizAttempt;
+  db.MembershipRegistration = MembershipRegistration;
   
   // Set up associations
   if (QuizCompletion.associate) {
@@ -74,9 +77,9 @@ const setupModels = async () => {
   // Sync the database (create tables if they don't exist)
   try {
     await quizSequelize.sync({ alter: true });
-    console.log('Quiz tracking database synchronized successfully');
+    console.log('[QuizDB] Synchronized');
   } catch (error) {
-    console.error('Error synchronizing quiz tracking database:', error);
+    console.error('[QuizDB] Sync error:', error.message);
   }
   
   return db;

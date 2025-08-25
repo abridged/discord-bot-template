@@ -7,6 +7,11 @@
     "dev": "nodemon src/server.js",
     "dev:full": "npm run db:start && npm run dev",
     "dev:docker": "docker-compose up -d postgres && npm run dev",
+    "a2a:dev": "node src/a2a/server.js",
+    "intuition:ping": "node src/scripts/intuition-ping.js",
+    "ids:demo": "node src/scripts/ids-demo.js",
+    "a2a:register": "node src/scripts/a2a-register-demo.js",
+    "bot:address": "node scripts/get-bot-smart-account.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -23,6 +28,10 @@
     "node": ">=18.x"
   },
   "dependencies": {
+    "@0xintuition/graphql": "1.0.0-alpha.1",
+    "@0xintuition/sdk": "1.0.0-alpha.3",
+    "@a2a-js/sdk": "^0.3.2",
+    "viem": "^2.31.4",
     "@collabland/accountkit-sdk": "^0.2.0",
     "@mozilla/readability": "^0.6.0",
     "@openzeppelin/contracts-upgradeable": "^5.3.0",

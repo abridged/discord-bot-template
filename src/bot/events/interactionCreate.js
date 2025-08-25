@@ -499,6 +499,28 @@ module.exports = {
                   }
                 );
                 console.log(`Quiz attempt marked as completed for user ${userId} on quiz ${activeQuizSession.quizId} with wallet ${userWallet || 'none'}`);
+
+                // A2A: Register community membership after completion (non-blocking logging/backoff handled in client)
+                try {
+                  if (userWallet) {
+                    const { registerCommunityMember } = require('../../services/a2a/client');
+                    const log = (level, data) => {
+                      try { console.log(JSON.stringify({ ts: new Date().toISOString(), level, source: 'discordTrigger', ...data })); } catch(_) {}
+                    };
+                    registerCommunityMember({
+                      smartAccountAddress: userWallet,
+                      chainId: Number(process.env.CHAIN || 84532),
+                      guildId: interaction.guildId || activeQuizSession.guildId || null,
+                      completedAt: new Date().toISOString()
+                    }, log).catch(err => {
+                      log('error', { event: 'a2a_call_failed', error: err.message });
+                    });
+                  } else {
+                    console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', source: 'discordTrigger', event: 'no_wallet_skip', userId }));
+                  }
+                } catch (a2aErr) {
+                  console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'error', source: 'discordTrigger', event: 'a2a_invoke_error', error: a2aErr.message }));
+                }
               } catch (dbError) {
                 console.error('Error saving quiz completion to database:', dbError);
               }

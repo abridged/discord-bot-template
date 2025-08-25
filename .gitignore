@@ -37,3 +37,5 @@ yarn-error.log*
 .vscode
 *.sublime-project
 *.sublime-workspace
+
+external/agent-registry/
