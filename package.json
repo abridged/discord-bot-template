@@ -12,6 +12,7 @@
     "ids:demo": "node src/scripts/ids-demo.js",
     "a2a:register": "node src/scripts/a2a-register-demo.js",
     "bot:address": "node scripts/get-bot-smart-account.js",
+    "user:address": "node scripts/get-user-smart-account.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
