@@ -8,18 +8,14 @@ const path = require('path');
 const env = process.env.NODE_ENV || 'development';
 let dbConfig = config[env];
 
-// Prefer DATABASE_URL in production
-const useUrl = (env === 'production') && !!process.env.DATABASE_URL;
+// Prefer DATABASE_URL whenever it is set
+const useUrl = !!process.env.DATABASE_URL;
 
-// Create Sequelize instance with SSL when using URL (Heroku/Supabase)
+// Create Sequelize instance. Do NOT force SSL here; pg-ssl.js manages it via env/host.
 const sequelize = useUrl
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
       protocol: 'postgres',
-      ssl: true,
-      dialectOptions: {
-        ssl: { require: true, rejectUnauthorized: false }
-      },
       logging: false
     })
   : new Sequelize(dbConfig);
@@ -55,7 +51,7 @@ const initializeDatabase = async () => {
     // Run migrations
     console.log('Running database migrations...');
     try {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       console.log('Database migrations completed successfully');
     } catch (migrationError) {
       console.error('Error running migrations:', migrationError);

@@ -327,10 +327,10 @@ module.exports = {
       
       // Handle poll creation buttons
       if (interaction.customId.startsWith('create-poll:') || interaction.customId.startsWith('poll-vote:')) {
-        const motherCommand = interaction.client.commands.get('mother');
-        if (motherCommand && typeof motherCommand.buttonInteraction === 'function') {
-          console.log(`Routing ${interaction.customId.split(':')[0]} to mother command buttonInteraction handler`);
-          await motherCommand.buttonInteraction(interaction);
+        const quizCommand = interaction.client.commands.get('agent') || interaction.client.commands.get('quiz') || interaction.client.commands.get('acequiz') || interaction.client.commands.get('mother');
+        if (quizCommand && typeof quizCommand.buttonInteraction === 'function') {
+          console.log(`Routing ${interaction.customId.split(':')[0]} to quiz command buttonInteraction handler`);
+          await quizCommand.buttonInteraction(interaction);
         } else {
           console.error('Error: Mother command or buttonInteraction handler not found');
           await interaction.reply({
@@ -499,6 +499,20 @@ module.exports = {
                   }
                 );
                 console.log(`Quiz attempt marked as completed for user ${userId} on quiz ${activeQuizSession.quizId} with wallet ${userWallet || 'none'}`);
+
+                // Fire-and-forget: notify Intuition integration service (decoupled)
+                try {
+                  const { publishQuizCompletion } = require('../../integrations/intuitionPublisher');
+                  const completedAtIso = new Date().toISOString();
+                  publishQuizCompletion({
+                    userAddress: userWallet,
+                    guildId: interaction.guildId || null,
+                    quizId: activeQuizSession.quizId,
+                    completedAt: completedAtIso,
+                  });
+                } catch (notifyError) {
+                  console.error('[IntuitionPublisher] Hook failed to enqueue', notifyError.message);
+                }
               } catch (dbError) {
                 console.error('Error saving quiz completion to database:', dbError);
               }
@@ -736,10 +750,10 @@ module.exports = {
       
       // Handle poll creation modal
       if (interaction.customId.startsWith('poll-creation-')) {
-        const motherCommand = interaction.client.commands.get('mother');
-        if (motherCommand && typeof motherCommand.modalSubmit === 'function') {
-          console.log('Routing poll modal submission to mother command');
-          await motherCommand.modalSubmit(interaction);
+        const quizCommand = interaction.client.commands.get('agent') || interaction.client.commands.get('quiz') || interaction.client.commands.get('acequiz') || interaction.client.commands.get('mother');
+        if (quizCommand && typeof quizCommand.modalSubmit === 'function') {
+          console.log('Routing poll modal submission to quiz command');
+          await quizCommand.modalSubmit(interaction);
         } else {
           console.error('Error: Mother command or modalSubmit handler not found');
           await interaction.reply({
