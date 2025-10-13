@@ -506,7 +506,7 @@ module.exports = {
                   const completedAtIso = new Date().toISOString();
                   publishQuizCompletion({
                     userAddress: userWallet,
-                    guildId: interaction.guildId || null,
+                    communityId: interaction.guildId || null,
                     quizId: activeQuizSession.quizId,
                     completedAt: completedAtIso,
                   });
